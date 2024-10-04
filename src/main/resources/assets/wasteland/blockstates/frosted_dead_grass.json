@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "": [
+      {
+      "model": "wasteland:block/frosted_dead_grass"
+      }
+    ]
+  }
+}

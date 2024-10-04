@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "wasteland:block/cracked_sand_mirrored"
+    }
+}

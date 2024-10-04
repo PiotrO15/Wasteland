@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "wasteland:block/yellow_dead_grass"
+  }
+}

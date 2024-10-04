@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "": [
+      {
+      "model": "wasteland:block/yellow_dead_grass"
+      }
+    ]
+  }
+}
