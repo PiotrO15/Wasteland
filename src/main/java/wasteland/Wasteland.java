@@ -6,7 +6,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import wasteland.block.ModBlocks;
 import wasteland.item.Compost;
-import wasteland.item.EssenceItem;
 import wasteland.item.ModItems;
 import wasteland.item.ResonantRod;
 
@@ -24,7 +23,6 @@ public class Wasteland {
         modEventBus.addListener(ModItems::buildContents);
 
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(EssenceItem.class);
         MinecraftForge.EVENT_BUS.register(Compost.class);
         MinecraftForge.EVENT_BUS.register(ResonantRod.class);
     }

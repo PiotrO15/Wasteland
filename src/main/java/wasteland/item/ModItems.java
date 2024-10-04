@@ -15,8 +15,6 @@ public class ModItems {
 
     public static final RegistryObject<Item> COMPOST = ITEMS.register("compost", () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> ESSENCE_ITEM = ITEMS.register("essence_item", () -> new Item(new Item.Properties()));
-
     public static final RegistryObject<Item> RESONANT_ROD = ITEMS.register("resonant_rod", () -> new Item(new Item.Properties().defaultDurability(192)));
 
     public static void register(IEventBus eventBus) {
