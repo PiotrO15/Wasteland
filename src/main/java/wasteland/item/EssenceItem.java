@@ -6,12 +6,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeResolver;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -58,9 +58,15 @@ public class EssenceItem {
             MutableInt mutableInt = new MutableInt(0);
 
             for(ChunkAccess chunkAccess : chunkAccessList) {
-                Holder<Biome> biomeHolder = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
-                chunkAccess.fillBiomesFromNoise(makeResolver(mutableInt, chunkAccess, boundingBox, biomeHolder, (p_262543_) -> true), serverLevel.getChunkSource().randomState().sampler());
-                chunkAccess.setUnsaved(true);
+                ResourceLocation resourceLocation = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getKey(chunkAccess.getNoiseBiome(0, 0, 0).get());
+                if (resourceLocation != null && resourceLocation.getNamespace().equals("wasteland")) {
+                    Biome biome = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).get(new ResourceLocation("minecraft", resourceLocation.getPath()));
+                    if (biome != null) {
+                        Holder<Biome> biomeHolder = Holder.direct(biome);
+                        chunkAccess.fillBiomesFromNoise(makeResolver(mutableInt, chunkAccess, boundingBox, biomeHolder, (p_262543_) -> true), serverLevel.getChunkSource().randomState().sampler());
+                        chunkAccess.setUnsaved(true);
+                    }
+                }
             }
 
             serverLevel.getChunkSource().chunkMap.resendBiomesForChunks(chunkAccessList);
