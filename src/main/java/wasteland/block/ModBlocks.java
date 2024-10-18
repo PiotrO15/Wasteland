@@ -23,7 +23,7 @@ public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Wasteland.MOD_ID);
 
     public static final RegistryObject<Block> CRACKED_SAND = registerBlock("cracked_sand", () ->
-            new Block(BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(1.0F).requiresCorrectToolForDrops()));
+            new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_LIGHT_GRAY).strength(1.0F).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> DEAD_LOG = registerBlock("dead_log", () ->
             new RotatedPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F)));
     public static final RegistryObject<Block> FROSTED_DEAD_GRASS = registerBlock("frosted_dead_grass", () ->
