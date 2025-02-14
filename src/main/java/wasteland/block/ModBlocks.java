@@ -22,18 +22,18 @@ import java.util.function.Supplier;
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Wasteland.MOD_ID);
 
-    public static final RegistryObject<Block> CRACKED_SAND = registerBlock("cracked_sand", () ->
-            new Block(BlockBehaviour.Properties.of().mapColor(MapColor.SAND).strength(1.0F).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRACKED_SAND = registerBlock("cracked_sand", CrackedSand::new);
     public static final RegistryObject<Block> DEAD_LOG = registerBlock("dead_log", () ->
             new RotatedPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F)));
+
     public static final RegistryObject<Block> FROSTED_DEAD_GRASS = registerBlock("frosted_dead_grass", () ->
-            new DeadGrass(BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.0F).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).replaceable(), 6));
+            new DeadGrass(6));
     public static final RegistryObject<Block> SHORT_DEAD_GRASS = registerBlock("short_dead_grass", () ->
-            new DeadGrass(BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.0F).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).replaceable(), 4));
+            new DeadGrass(4));
     public static final RegistryObject<Block> TALL_DEAD_GRASS = registerBlock("tall_dead_grass", () ->
-            new DeadGrass(BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.0F).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).replaceable(), 8));
+            new DeadGrass(8));
     public static final RegistryObject<Block> YELLOW_DEAD_GRASS = registerBlock("yellow_dead_grass", () ->
-            new DeadGrass(BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.0F).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ).replaceable(), 6));
+            new DeadGrass(6));
 
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
@@ -42,8 +42,8 @@ public class ModBlocks {
         return registryObject;
     }
 
-    private static <T extends Block> RegistryObject<Item> registerBlockItem(String name, RegistryObject<T> block) {
-        return ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+    private static <T extends Block> void registerBlockItem(String name, RegistryObject<T> block) {
+        ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }
 
     public static void register(IEventBus eventBus) {
