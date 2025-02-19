@@ -3,9 +3,11 @@ package wasteland.item;
 import net.minecraft.core.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeResolver;
@@ -18,7 +20,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Predicate;
 
 public class EssenceItem {
     @SubscribeEvent
@@ -27,41 +28,11 @@ public class EssenceItem {
             BlockPos pos = event.getPos();
             Level level = event.getLevel();
 
-            if (level.isClientSide()) {
-                Random random = new Random();
-                for (int i = 0; i < random.nextInt(3, 5); i++) {
-                    level.addParticle(ParticleTypes.SCRAPE, pos.getX() + random.nextDouble(), pos.getY() + 1, pos.getZ() + random.nextDouble(), 1, 1, 1);
-                }
-                return;
+            if (!level.isClientSide()) {
+                purifyBiome((ServerLevel) level, pos, event.getEntity());
+            } else {
+                spawnParticles(level, pos);
             }
-
-            // Set the biome at the location of use
-            BlockPos quantizedPos1 = quantize(new BlockPos(pos.getX() - 2, level.getMinBuildHeight(), pos.getZ() - 2));
-            BlockPos quantizedPos2 = quantize(new BlockPos(pos.getX() + 2, level.getMaxBuildHeight(), pos.getZ() + 2));
-            BoundingBox boundingBox = BoundingBox.fromCorners(quantizedPos1, quantizedPos2);
-
-            ServerLevel serverLevel = (ServerLevel) level;
-            List<ChunkAccess> chunkAccessList = new ArrayList<>();
-
-            for(int k = SectionPos.blockToSectionCoord(boundingBox.minZ()); k <= SectionPos.blockToSectionCoord(boundingBox.maxZ()); ++k) {
-                for(int l = SectionPos.blockToSectionCoord(boundingBox.minX()); l <= SectionPos.blockToSectionCoord(boundingBox.maxX()); ++l) {
-                    ChunkAccess chunkAccess = serverLevel.getChunk(l, k, ChunkStatus.FULL, false);
-                    if (chunkAccess != null)
-                        chunkAccessList.add(chunkAccess);
-                }
-            }
-
-            for(ChunkAccess chunkAccess : chunkAccessList) {
-                ResourceLocation resourceLocation = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getKey(chunkAccess.getNoiseBiome(0, chunkAccess.getHeight(), 0).get());
-                if (resourceLocation != null && resourceLocation.getNamespace().equals("wasteland")) {
-                    Holder<Biome> biomeHolder = serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(ResourceKey.create(Registries.BIOME, new ResourceLocation("minecraft", resourceLocation.getPath())));
-
-                    chunkAccess.fillBiomesFromNoise(makeResolver(chunkAccess, boundingBox, biomeHolder, (p_262543_) -> true), serverLevel.getChunkSource().randomState().sampler());
-                    chunkAccess.setUnsaved(true);
-                }
-            }
-
-            serverLevel.getChunkSource().chunkMap.resendBiomesForChunks(chunkAccessList);
         }
     }
 
@@ -73,17 +44,57 @@ public class EssenceItem {
         return new BlockPos(quantize(blockPos.getX()), quantize(blockPos.getY()), quantize(blockPos.getZ()));
     }
 
-    private static BiomeResolver makeResolver(ChunkAccess chunkAccess, BoundingBox boundingBox, Holder<Biome> p_262705_, Predicate<Holder<Biome>> p_262695_) {
-        return (p_262550_, p_262551_, p_262552_, p_262553_) -> {
-            int i = QuartPos.toBlock(p_262550_);
-            int j = QuartPos.toBlock(p_262551_);
-            int k = QuartPos.toBlock(p_262552_);
-            Holder<Biome> holder = chunkAccess.getNoiseBiome(p_262550_, p_262551_, p_262552_);
-            if (boundingBox.isInside(i, j, k) && p_262695_.test(holder)) {
-                return p_262705_;
-            } else {
-                return holder;
+    private static BiomeResolver makePurificationResolver(ChunkAccess chunk, BoundingBox boundingBox, ServerLevel level) {
+        return (x, y, z, sampler) -> {
+            int quartX = QuartPos.toBlock(x);
+            int quartY = QuartPos.toBlock(y);
+            int quartZ = QuartPos.toBlock(z);
+            Holder<Biome> oldBiomeHolder = chunk.getNoiseBiome(x, y, z);
+            if (boundingBox.isInside(quartX, quartY, quartZ)) {
+                ResourceLocation oldBiome = level.registryAccess().registryOrThrow(Registries.BIOME).getKey(oldBiomeHolder.get());
+                if (oldBiome != null && oldBiome.getNamespace().equals("wasteland")) {
+                    return (Holder<Biome>) level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(ResourceKey.create(Registries.BIOME, new ResourceLocation("minecraft", oldBiome.getPath())));
+                }
             }
+
+            return oldBiomeHolder;
         };
+    }
+
+    private static void spawnParticles(Level level, BlockPos pos) {
+        if (level.isClientSide()) {
+            Random random = new Random();
+            for (int i = 0; i < random.nextInt(3, 5); i++) {
+                level.addParticle(ParticleTypes.SCRAPE, pos.getX() + random.nextDouble(), pos.getY() + 1, pos.getZ() + random.nextDouble(), 1, 1, 1);
+            }
+        }
+    }
+
+    private static void purifyBiome(ServerLevel level, BlockPos pos, Player player) {
+        // Prepare the bounding box
+        BlockPos corner1 = quantize(new BlockPos(pos.getX() - 4, level.getMinBuildHeight(), pos.getZ() - 4));
+        BlockPos corner2 = quantize(new BlockPos(pos.getX() + 4, level.getMaxBuildHeight(), pos.getZ() + 4));
+        BoundingBox boundingBox = BoundingBox.fromCorners(corner1, corner2);
+        player.sendSystemMessage(Component.literal(boundingBox.toString()));
+
+        // Select all chunks inside the bounding box
+        List<ChunkAccess> chunks = new ArrayList<>();
+        for (int z = SectionPos.blockToSectionCoord(boundingBox.minZ()); z <= SectionPos.blockToSectionCoord(boundingBox.maxZ()); z++) {
+            for (int x = SectionPos.blockToSectionCoord(boundingBox.minX()); x <= SectionPos.blockToSectionCoord(boundingBox.maxX()); x++) {
+                ChunkAccess chunk = level.getChunk(x, z, ChunkStatus.FULL, false);
+                if (chunk != null) {
+                    chunks.add(chunk);
+                    player.sendSystemMessage(Component.literal("Added chunk at " + x + " " + z));
+                }
+            }
+        }
+
+        // Apply the purification resolver on all selected chunks
+        for (ChunkAccess chunk : chunks) {
+            chunk.fillBiomesFromNoise(makePurificationResolver(chunk, boundingBox, level), level.getChunkSource().randomState().sampler());
+            chunk.setUnsaved(true);
+        }
+
+        level.getChunkSource().chunkMap.resendBiomesForChunks(chunks);
     }
 }
