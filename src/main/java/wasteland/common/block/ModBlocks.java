@@ -1,4 +1,4 @@
-package wasteland.block;
+package wasteland.common.block;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -15,7 +15,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import wasteland.Wasteland;
-import wasteland.item.ModItems;
+import wasteland.common.item.ModItems;
 
 import java.util.function.Supplier;
 

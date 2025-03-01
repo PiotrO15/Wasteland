@@ -1,4 +1,4 @@
-package wasteland.item;
+package wasteland.common.item;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;

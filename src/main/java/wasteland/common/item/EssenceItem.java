@@ -1,4 +1,4 @@
-package wasteland.item;
+package wasteland.common.item;
 
 import net.minecraft.core.*;
 import net.minecraft.core.particles.ParticleTypes;
@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import wasteland.utils.BiomeUtils;
+import wasteland.common.utils.BiomeUtils;
 
 public class EssenceItem {
     @SubscribeEvent
