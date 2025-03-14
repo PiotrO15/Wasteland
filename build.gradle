@@ -100,10 +100,18 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.3.7'
+    implementation fg.deobf("curse.maven:agricraft-225635:5899444")
+    implementation fg.deobf("curse.maven:pneumaticcraft-repressurized-281849:6142963")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
