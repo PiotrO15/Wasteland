@@ -3,10 +3,10 @@ package wasteland.block;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.level.block.state.properties.WoodType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,28 +22,45 @@ import java.util.function.Supplier;
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Wasteland.MOD_ID);
 
-    public static final RegistryObject<Block> CRACKED_SAND = registerBlock("cracked_sand", CrackedSand::new);
-    public static final RegistryObject<Block> DEAD_LOG = registerBlock("dead_log", () ->
-            new RotatedPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F)));
+//    public static final RegistryObject<Block> DEAD_LOG = registerBlock("dead_log", () ->
+//            //new RotatedPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F)));
+//            new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LOG)));
+//    public static final RegistryObject<Block> DEAD_PLANKS = registerBlock("dead_planks", () ->
+//            new Block(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS)));
+//    public static final RegistryObject<Block> DEAD_SLAB = registerBlock("dead_slab", () ->
+//            new SlabBlock(BlockBehaviour.Properties.copy(Blocks.OAK_SLAB)));
+//    public static final RegistryObject<Block> DEAD_STAIRS = registerBlock("dead_stairs", () ->
+//            new StairBlock(() -> DEAD_PLANKS.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.OAK_STAIRS)));
 
-    public static final RegistryObject<Block> FROSTED_DEAD_GRASS = registerBlock("frosted_dead_grass", () ->
-            new DeadGrass(6));
-    public static final RegistryObject<Block> SHORT_DEAD_GRASS = registerBlock("short_dead_grass", () ->
-            new DeadGrass(4));
-    public static final RegistryObject<Block> TALL_DEAD_GRASS = registerBlock("tall_dead_grass", () ->
-            new DeadGrass(8));
-    public static final RegistryObject<Block> YELLOW_DEAD_GRASS = registerBlock("yellow_dead_grass", () ->
-            new DeadGrass(6));
+    public static final RegistryObject<Block> CRACKED_SAND = registerBlockItem("cracked_sand", new CrackedSand());
+
+    public static final BlockSetType DEAD_WOOD_BLOCK_SET_TYPE = BlockSetType.register(new BlockSetType("dead"));
+    public static final WoodType DEAD_WOOD_TYPE = WoodType.register(new WoodType("dead", DEAD_WOOD_BLOCK_SET_TYPE));
+
+    public static final RegistryObject<Block> DEAD_LOG = registerBlockItem("dead_log", new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LOG)));
+    public static final RegistryObject<Block> DEAD_PLANKS = registerBlockItem("dead_planks", new Block(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS)));
+    public static final RegistryObject<Block> DEAD_STAIRS = registerBlockItem("dead_stairs", new StairBlock(Blocks.OAK_PLANKS.defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.OAK_STAIRS)));
+    public static final RegistryObject<Block> DEAD_SLAB = registerBlockItem("dead_slab", new SlabBlock(BlockBehaviour.Properties.copy(Blocks.OAK_SLAB)));
+    public static final RegistryObject<Block> DEAD_FENCE = registerBlockItem("dead_fence", new FenceBlock(BlockBehaviour.Properties.copy(Blocks.OAK_FENCE)));
+    public static final RegistryObject<Block> DEAD_FENCE_GATE = registerBlockItem("dead_fence_gate", new FenceGateBlock(BlockBehaviour.Properties.copy(Blocks.OAK_FENCE_GATE), DEAD_WOOD_TYPE));
+    public static final RegistryObject<Block> DEAD_DOOR = registerBlockItem("dead_door", new DoorBlock(BlockBehaviour.Properties.copy(Blocks.OAK_DOOR), DEAD_WOOD_BLOCK_SET_TYPE));
+    public static final RegistryObject<Block> DEAD_TRAPDOOR = registerBlockItem("dead_trapdoor", new TrapDoorBlock(BlockBehaviour.Properties.copy(Blocks.OAK_TRAPDOOR), DEAD_WOOD_BLOCK_SET_TYPE));
+    public static final RegistryObject<Block> DEAD_PRESSURE_PLATE = registerBlockItem("dead_pressure_plate", new PressurePlateBlock(PressurePlateBlock.Sensitivity.EVERYTHING, BlockBehaviour.Properties.copy(Blocks.OAK_PRESSURE_PLATE), DEAD_WOOD_BLOCK_SET_TYPE));
+    public static final RegistryObject<Block> DEAD_BUTTON = registerBlockItem("dead_button", new ButtonBlock(BlockBehaviour.Properties.copy(Blocks.OAK_BUTTON), DEAD_WOOD_BLOCK_SET_TYPE, 30, true));
+
+    public static final RegistryObject<Block> FROSTED_DEAD_GRASS = registerBlockItem("frosted_dead_grass", new DeadGrass(6));
+    public static final RegistryObject<Block> SHORT_DEAD_GRASS = registerBlockItem("short_dead_grass", new DeadGrass(4));
+    public static final RegistryObject<Block> TALL_DEAD_GRASS = registerBlockItem("tall_dead_grass", new DeadGrass(8));
+    public static final RegistryObject<Block> YELLOW_DEAD_GRASS = registerBlockItem("yellow_dead_grass", new DeadGrass(6));
 
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
-        RegistryObject<T> registryObject = BLOCKS.register(name, block);
-        registerBlockItem(name, registryObject);
-        return registryObject;
+        return BLOCKS.register(name, block);
     }
 
-    private static <T extends Block> void registerBlockItem(String name, RegistryObject<T> block) {
-        ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+    private static <T extends Block> RegistryObject<T> registerBlockItem(String name, T block) {
+        ModItems.ITEMS.register(name, () -> new BlockItem(block, new Item.Properties()));
+        return registerBlock(name, () -> block);
     }
 
     public static void register(IEventBus eventBus) {
@@ -59,6 +76,18 @@ public class ModBlocks {
             event.accept(SHORT_DEAD_GRASS);
             event.accept(TALL_DEAD_GRASS);
             event.accept(YELLOW_DEAD_GRASS);
+        }
+        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
+            event.accept(DEAD_LOG);
+            event.accept(DEAD_PLANKS);
+            event.accept(DEAD_STAIRS);
+            event.accept(DEAD_SLAB);
+            event.accept(DEAD_FENCE);
+            event.accept(DEAD_FENCE_GATE);
+            event.accept(DEAD_DOOR);
+            event.accept(DEAD_TRAPDOOR);
+            event.accept(DEAD_PRESSURE_PLATE);
+            event.accept(DEAD_BUTTON);
         }
     }
 }

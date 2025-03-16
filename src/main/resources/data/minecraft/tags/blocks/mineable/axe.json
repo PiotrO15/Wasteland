@@ -1,6 +1,15 @@
 {
   "replace": false,
   "values": [
-    "wasteland:dead_log"
+    "wasteland:dead_log",
+    "wasteland:dead_planks",
+    "wasteland:dead_stairs",
+    "wasteland:dead_slab",
+    "wasteland:dead_fence",
+    "wasteland:dead_fence_gate",
+    "wasteland:dead_door",
+    "wasteland:dead_trapdoor",
+    "wasteland:dead_pressure_plate",
+    "wasteland:dead_button"
   ]
 }

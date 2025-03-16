@@ -1,7 +1,16 @@
 {
   "variants": {
-    "axis=y":    { "model": "wasteland:block/dead_log" },
-    "axis=z":     { "model": "wasteland:block/dead_log", "x": 90 },
-    "axis=x":     { "model": "wasteland:block/dead_log", "x": 90, "y": 90 }
+    "axis=x": {
+      "model": "wasteland:block/dead_log_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "wasteland:block/dead_log"
+    },
+    "axis=z": {
+      "model": "wasteland:block/dead_log_horizontal",
+      "x": 90
+    }
   }
 }
