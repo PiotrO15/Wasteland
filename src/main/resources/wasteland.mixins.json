@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "wasteland.compat.mixins",
   "mixins": [
+    "AgriCraftFarmerBeeCompat",
     "AgriCraftFertilityPatch",
     "AgriHornHarvestablePatch",
     "AgriPlantAllowsClippingPatch"
