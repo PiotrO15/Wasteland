@@ -8,6 +8,7 @@ import wasteland.block.ModBlocks;
 import wasteland.item.Compost;
 import wasteland.item.ModItems;
 import wasteland.item.ResonantRod;
+import wasteland.tree.BeehiveProbabilityModifier;
 
 @Mod(Wasteland.MOD_ID)
 public class Wasteland {
@@ -25,5 +26,6 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(Compost.class);
         MinecraftForge.EVENT_BUS.register(ResonantRod.class);
+        MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
     }
 }
