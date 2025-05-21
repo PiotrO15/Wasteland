@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_top_left",
+  "textures": {
+    "bottom": "wasteland:block/dead_door_bottom",
+    "top": "wasteland:block/dead_door_top"
+  }
+}
