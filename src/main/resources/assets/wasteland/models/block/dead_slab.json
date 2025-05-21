@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "wasteland:block/dead_planks",
+    "side": "wasteland:block/dead_planks",
+    "top": "wasteland:block/dead_planks"
+  }
+}

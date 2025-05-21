@@ -5,15 +5,16 @@
         "model": "wasteland:block/cracked_sand"
       },
       {
-        "model": "wasteland:block/cracked_sand_mirrored"
+        "model": "wasteland:block/cracked_sand",
+        "y": 90
       },
       {
         "model": "wasteland:block/cracked_sand",
         "y": 180
       },
       {
-        "model": "wasteland:block/cracked_sand_mirrored",
-         "y": 180
+        "model": "wasteland:block/cracked_sand",
+        "y": 270
       }
     ]
   }

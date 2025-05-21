@@ -1,12 +1,7 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/cube_column",
   "textures": {
-    "particle": "wasteland:block/dead_log",
-    "down": "wasteland:block/dead_log_top",
-    "up": "wasteland:block/dead_log_top",
-    "north": "wasteland:block/dead_log",
-    "south": "wasteland:block/dead_log",
-    "west": "wasteland:block/dead_log",
-    "east": "wasteland:block/dead_log"
+    "end": "wasteland:block/dead_log_top",
+    "side": "wasteland:block/dead_log"
   }
 }

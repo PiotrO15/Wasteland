@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "wasteland:block/dead_pressure_plate"
+    },
+    "powered=true": {
+      "model": "wasteland:block/dead_pressure_plate_down"
+    }
+  }
+}
