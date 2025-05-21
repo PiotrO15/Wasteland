@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
-import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,16 +20,6 @@ import java.util.function.Supplier;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Wasteland.MOD_ID);
-
-//    public static final RegistryObject<Block> DEAD_LOG = registerBlock("dead_log", () ->
-//            //new RotatedPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).sound(SoundType.WOOD).strength(2.0F)));
-//            new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LOG)));
-//    public static final RegistryObject<Block> DEAD_PLANKS = registerBlock("dead_planks", () ->
-//            new Block(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS)));
-//    public static final RegistryObject<Block> DEAD_SLAB = registerBlock("dead_slab", () ->
-//            new SlabBlock(BlockBehaviour.Properties.copy(Blocks.OAK_SLAB)));
-//    public static final RegistryObject<Block> DEAD_STAIRS = registerBlock("dead_stairs", () ->
-//            new StairBlock(() -> DEAD_PLANKS.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.OAK_STAIRS)));
 
     public static final RegistryObject<Block> CRACKED_SAND = registerBlockItem("cracked_sand", new CrackedSand());
 
