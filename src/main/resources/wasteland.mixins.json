@@ -7,7 +7,9 @@
     "AgriCraftFarmerBeeCompat",
     "AgriCraftFertilityPatch",
     "AgriHornHarvestablePatch",
-    "AgriPlantAllowsClippingPatch"
+    "AgriPlantAllowsClippingPatch",
+    "EnchantedCauldronPatch",
+    "ProductiveBeesSussyBeePatch"
   ],
   "compatibilityLevel": "JAVA_17",
   "injectors": {
