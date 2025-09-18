@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "wasteland:block/depleted_soil"
+      },
+      {
+        "model": "wasteland:block/depleted_soil",
+        "y": 90
+      },
+      {
+        "model": "wasteland:block/depleted_soil",
+        "y": 180
+      },
+      {
+        "model": "wasteland:block/depleted_soil",
+        "y": 270
+      }
+    ]
+  }
+}

@@ -41,7 +41,7 @@ public class CrackedSand extends Block {
 
         if (state.is(ModBlocks.CRACKED_SAND.get()) && PotionUtils.getPotion(itemStack) == Potions.WATER) {
             level.playSound(null, blockPos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 0.5F, 1.0F);
-            player.setItemInHand(player.getUsedItemHand(), ItemUtils.createFilledResult(itemStack, player, new ItemStack(Items.GLASS_BOTTLE)));
+            player.setItemInHand(event.getHand(), ItemUtils.createFilledResult(itemStack, player, new ItemStack(Items.GLASS_BOTTLE)));
 
             if (!level.isClientSide) {
                 ServerLevel serverlevel = (ServerLevel)level;

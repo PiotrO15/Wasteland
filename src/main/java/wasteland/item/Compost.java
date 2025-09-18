@@ -1,7 +1,10 @@
 package wasteland.item;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -12,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
+import wasteland.block.ModBlocks;
 
 import java.util.Optional;
 
@@ -23,6 +27,21 @@ public class Compost {
 
         if (itemStack.getItem() != ModItems.COMPOST.get()) {
             return;
+        }
+
+        if (level.getBlockState(event.getPos()).is(TagKey.create(Registries.BLOCK, new ResourceLocation("wasteland", "depleted_soil")))) {
+            BlockPos abovePos = event.getPos().above();
+            if (level.getBlockState(abovePos).isAir()) {
+                if (level.isClientSide()) {
+                    BoneMealItem.addGrowthParticles(level, abovePos, 15);
+                } else {
+                    level.setBlockAndUpdate(abovePos, ModBlocks.CLOVER.get().defaultBlockState());
+
+                    if (!event.getEntity().isCreative()) {
+                        itemStack.shrink(1);
+                    }
+                }
+            }
         }
 
         if (level.getBlockState(event.getPos()).getBlock() != Blocks.GRASS) {

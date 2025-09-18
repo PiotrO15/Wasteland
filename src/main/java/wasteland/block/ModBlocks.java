@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,6 +24,9 @@ public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, Wasteland.MOD_ID);
 
     public static final RegistryObject<Block> CRACKED_SAND = registerBlockItem("cracked_sand", new CrackedSand());
+    public static final RegistryObject<Block> DEPLETED_SOIL = registerBlockItem("depleted_soil", new DepletedSoil(DepletedSoil.SoilState.DEPLETED, BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.5F).sound(SoundType.GRAVEL)));
+    public static final RegistryObject<Block> POOR_SOIL = registerBlockItem("poor_soil", new DepletedSoil(DepletedSoil.SoilState.POOR, BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.5F).sound(SoundType.GRAVEL)));
+    public static final RegistryObject<Block> RESTORING_SOIL = registerBlockItem("restoring_soil", new DepletedSoil(DepletedSoil.SoilState.RESTORING, BlockBehaviour.Properties.of().mapColor(MapColor.DIRT).strength(0.5F).sound(SoundType.GRAVEL)));
 
     public static final BlockSetType DEAD_WOOD_BLOCK_SET_TYPE = BlockSetType.register(new BlockSetType("dead"));
     public static final WoodType DEAD_WOOD_TYPE = WoodType.register(new WoodType("dead", DEAD_WOOD_BLOCK_SET_TYPE));
@@ -42,6 +47,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> TALL_DEAD_GRASS = registerBlockItem("tall_dead_grass", new DeadGrass(8));
     public static final RegistryObject<Block> YELLOW_DEAD_GRASS = registerBlockItem("yellow_dead_grass", new DeadGrass(6));
 
+    public static final RegistryObject<Block> CLOVER = registerBlockItem("clover", new CloverBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().pushReaction(PushReaction.DESTROY)));
+//    public static final RegistryObject<Block> WILDFLOWERS = registerBlockItem("wildflowers", new PinkPetalsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().pushReaction(PushReaction.DESTROY)));
+//    public static final RegistryObject<Block> LEAF_LITTER = registerBlockItem("leaf_litter", new PinkPetalsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().pushReaction(PushReaction.DESTROY)));
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         return BLOCKS.register(name, block);
@@ -60,11 +68,18 @@ public class ModBlocks {
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
             event.accept(CRACKED_SAND);
+            event.accept(DEPLETED_SOIL);
+            event.accept(POOR_SOIL);
+            event.accept(RESTORING_SOIL);
             event.accept(DEAD_LOG);
             event.accept(FROSTED_DEAD_GRASS);
             event.accept(SHORT_DEAD_GRASS);
             event.accept(TALL_DEAD_GRASS);
             event.accept(YELLOW_DEAD_GRASS);
+
+            event.accept(CLOVER);
+//            event.accept(WILDFLOWERS);
+//            event.accept(LEAF_LITTER);
         }
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             event.accept(DEAD_LOG);

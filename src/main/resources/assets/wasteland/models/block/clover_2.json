@@ -1,0 +1,7 @@
+{
+  "parent": "wasteland:block/tinted_flowerbed_2",
+  "textures": {
+    "flowerbed": "wasteland:block/clover",
+    "stem": "wasteland:block/clover_stem"
+  }
+}

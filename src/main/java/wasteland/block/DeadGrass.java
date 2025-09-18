@@ -1,6 +1,7 @@
 package wasteland.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -36,7 +37,7 @@ public class DeadGrass extends BushBlock {
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
-        return world.getBlockState(pos.below()).getBlock() == ModBlocks.CRACKED_SAND.get();
+        return world.getBlockState(pos.below()).getBlock() == ModBlocks.CRACKED_SAND.get() || world.getBlockState(pos.below()).is(BlockTags.DIRT);
     }
 
     @Override

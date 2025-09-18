@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "wasteland:block/poor_soil"
+      },
+      {
+        "model": "wasteland:block/poor_soil",
+        "y": 90
+      },
+      {
+        "model": "wasteland:block/poor_soil",
+        "y": 180
+      },
+      {
+        "model": "wasteland:block/poor_soil",
+        "y": 270
+      }
+    ]
+  }
+}

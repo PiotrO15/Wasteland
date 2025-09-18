@@ -15,8 +15,6 @@ public class ModItems {
 
     public static final RegistryObject<Item> COMPOST = ITEMS.register("compost", () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> RESONANT_ROD = ITEMS.register("resonant_rod", () -> new Item(new Item.Properties().defaultDurability(192)));
-
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }
@@ -25,7 +23,6 @@ public class ModItems {
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(COMPOST);
-            event.accept(RESONANT_ROD);
         }
     }
 }
