@@ -6,11 +6,23 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraftforge.common.ToolAction;
+import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -105,5 +117,34 @@ public class DepletedSoil extends Block {
         DEPLETED,
         POOR,
         RESTORING
+    }
+
+    @Override
+    @Nullable
+    public BlockState getToolModifiedState(BlockState state, UseOnContext context, ToolAction toolAction, boolean simulate) {
+        Level level = context.getLevel();
+
+        if (toolAction.equals(ToolActions.HOE_TILL) && level.getBlockState(context.getClickedPos().above()).isAir()) {
+            if (!level.isClientSide()) {
+                List<ItemStack> tillLoot = getTillLoot((ServerLevel) level);
+                tillLoot.forEach(itemStack -> popResource(level, context.getClickedPos().above(), itemStack));
+            }
+
+            return ModBlocks.DEPLETED_SOIL_FARMLAND.get().defaultBlockState();
+        }
+        return null;
+    }
+
+    public List<ItemStack> getTillLoot(ServerLevel level) {
+        ResourceLocation resourcelocation = new ResourceLocation("wasteland", "gameplay/depleted_soil_till");
+        if (!resourcelocation.equals(BuiltInLootTables.EMPTY)) {
+            LootParams lootParams = new LootParams.Builder(level).create(LootContextParamSets.EMPTY);
+
+            ServerLevel serverlevel = lootParams.getLevel();
+            LootTable lootTable = serverlevel.getServer().getLootData().getLootTable(resourcelocation);
+            return lootTable.getRandomItems(lootParams);
+        }
+
+        return Collections.emptyList();
     }
 }

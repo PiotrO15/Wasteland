@@ -5,6 +5,7 @@
   "block.wasteland.depleted_soil": "Depleted Soil",
   "block.wasteland.poor_soil": "Poor Soil",
   "block.wasteland.restoring_soil": "Restoring Soil",
+  "block.wasteland.depleted_soil_farmland": "Depleted Soil Farmland",
   "block.wasteland.dead_log": "Dead Log",
   "block.wasteland.dead_planks": "Dead Planks",
   "block.wasteland.dead_stairs": "Dead Stairs",
@@ -19,5 +20,6 @@
   "block.wasteland.short_dead_grass": "Short Dead Grass",
   "block.wasteland.tall_dead_grass": "Tall Dead Grass",
   "block.wasteland.yellow_dead_grass": "Yellow Dead Grass",
-  "block.wasteland.clover": "Clover"
+  "block.wasteland.clover": "Clover",
+  "block.wasteland.wildflowers": "Wildflowers"
 }

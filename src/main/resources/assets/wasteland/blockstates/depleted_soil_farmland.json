@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "moisture=0": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=1": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=2": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=3": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=4": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=5": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=6": {
+      "model": "wasteland:block/depleted_soil_farmland"
+    },
+    "moisture=7": {
+      "model": "wasteland:block/depleted_soil_farmland_moist"
+    }
+  }
+}
