@@ -10,6 +10,7 @@
     "wasteland:dead_door",
     "wasteland:dead_trapdoor",
     "wasteland:dead_pressure_plate",
-    "wasteland:dead_button"
+    "wasteland:dead_button",
+    "wasteland:dead_mushroom_stem"
   ]
 }

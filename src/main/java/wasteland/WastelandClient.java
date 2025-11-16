@@ -15,12 +15,12 @@ public class WastelandClient {
         event.register((state, reader, pos, tintIndex) ->
                 reader != null && pos != null ? BiomeColors.getAverageGrassColor(reader, pos) : GrassColor.getDefaultColor(), ModBlocks.CLOVER.get());
 
-//        event.register((state, reader, pos, tintIndex) -> {
-//            if (tintIndex != 0) {
-//                return reader != null && pos != null ? BiomeColors.getAverageGrassColor(reader, pos) : GrassColor.getDefaultColor();
-//            } else {
-//                return -1;
-//            }
-//        }, ModBlocks.WILDFLOWERS.get());
+        event.register((state, reader, pos, tintIndex) -> {
+            if (tintIndex != 0) {
+                return reader != null && pos != null ? BiomeColors.getAverageGrassColor(reader, pos) : GrassColor.getDefaultColor();
+            } else {
+                return -1;
+            }
+        }, ModBlocks.WILDFLOWERS.get());
     }
 }

@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "wasteland:depleted_soil",
+    "wasteland:poor_soil",
+    "wasteland:restoring_soil"
+  ]
+}

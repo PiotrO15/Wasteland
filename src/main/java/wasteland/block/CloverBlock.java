@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PinkPetalsBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.synth.PerlinNoise;
 import org.jetbrains.annotations.NotNull;
 
 public class CloverBlock extends PinkPetalsBlock {
@@ -47,11 +48,20 @@ public class CloverBlock extends PinkPetalsBlock {
 
         BlockState defaultBlockState = this.defaultBlockState();
 
+        long worldSeed = level.getSeed();
+        RandomSource noiseSource = RandomSource.create(worldSeed);
+        PerlinNoise perlinNoise = PerlinNoise.create(noiseSource, -2, 1.0, 0.5);
+
         for(int i = 0; i < 4; ++i) {
             BlockPos blockpos = pos.offset(source.nextInt(3) - 1, source.nextInt(5) - 3, source.nextInt(3) - 1);
-            if (level.getBlockState(blockpos).is(Blocks.AIR) && level.getBlockState(blockpos.below()).is(DEPLETED_SOIL)) {
-                Direction randomDir = Direction.Plane.HORIZONTAL.getRandomDirection(source);
-                level.setBlockAndUpdate(blockpos, defaultBlockState.setValue(FACING, randomDir));
+
+            double value = perlinNoise.getValue(blockpos.getX() * 0.5, blockpos.getY() * 0.5, blockpos.getZ() * 0.5);
+
+            if (value > 0.05) {
+                if (level.getBlockState(blockpos).is(Blocks.AIR) && level.getBlockState(blockpos.below()).is(DEPLETED_SOIL)) {
+                    Direction randomDir = Direction.Plane.HORIZONTAL.getRandomDirection(source);
+                    level.setBlockAndUpdate(blockpos, defaultBlockState.setValue(FACING, randomDir));
+                }
             }
         }
     }
