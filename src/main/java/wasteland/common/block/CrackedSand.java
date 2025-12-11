@@ -1,4 +1,4 @@
-package wasteland.block;
+package wasteland.common.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;

@@ -19,7 +19,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import wasteland.block.DepletedSoil;
+import wasteland.common.block.DepletedSoil;
 
 import java.util.Optional;
 
