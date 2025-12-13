@@ -9,6 +9,7 @@
     "AgriHornHarvestablePatch",
     "AgriPlantAllowsClippingPatch",
     "EnchantedCauldronPatch",
+    "EnchantedDistillingCategoryPatch",
     "ProductiveBeesSussyBeePatch"
   ],
   "compatibilityLevel": "JAVA_17",

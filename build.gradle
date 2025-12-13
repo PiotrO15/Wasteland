@@ -117,6 +117,7 @@ dependencies {
     implementation fg.deobf("curse.maven:pneumaticcraft-repressurized-281849:7307654")
     implementation fg.deobf("curse.maven:productivebees-377897:5566102")
     implementation fg.deobf("curse.maven:enchanted-witchcraft-560363:6638514")
+    implementation fg.deobf("curse.maven:jei-238222:7270446")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
