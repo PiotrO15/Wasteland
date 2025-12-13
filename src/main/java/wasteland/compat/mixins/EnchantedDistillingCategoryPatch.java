@@ -18,7 +18,7 @@ public class EnchantedDistillingCategoryPatch {
 
     @Inject(method = "setRecipe(Lmezz/jei/api/gui/builder/IRecipeLayoutBuilder;Lnet/favouriteless/enchanted/common/recipes/DistillingRecipe;Lmezz/jei/api/recipe/IFocusGroup;)V", at = @At("HEAD"), remap = false, cancellable = true)
     public void mixinSetRecipe(IRecipeLayoutBuilder builder, DistillingRecipe recipe, IFocusGroup focuses, CallbackInfo clr) {
-        int offset = 0;
+        int offset = 20;
 
         boolean jar_handled = false;
 
@@ -27,9 +27,7 @@ public class EnchantedDistillingCategoryPatch {
                 builder.addSlot(RecipeIngredientRole.INPUT, 28, 30).addIngredient(VanillaTypes.ITEM_STACK, recipe.getItemsIn().get(0));
                 jar_handled = true;
             } else {
-                if (offset != 0) {
-                    builder.addSlot(RecipeIngredientRole.INPUT, 50, offset).addIngredient(VanillaTypes.ITEM_STACK, i);
-                }
+                builder.addSlot(RecipeIngredientRole.INPUT, 50, offset).addIngredient(VanillaTypes.ITEM_STACK, i);
 
                 offset += 20;
             }
