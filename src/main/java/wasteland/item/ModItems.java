@@ -1,5 +1,6 @@
 package wasteland.item;
 
+import me.desht.pneumaticcraft.common.core.ModCreativeModeTab;
 import me.desht.pneumaticcraft.common.item.DroneItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
@@ -27,6 +28,9 @@ public class ModItems {
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(COMPOST);
+        }
+        if (event.getTabKey() == ModCreativeModeTab.DEFAULT.getKey()) {
+            event.accept(TERRAFORMING_DRONE);
         }
     }
 }

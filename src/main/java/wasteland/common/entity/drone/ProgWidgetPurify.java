@@ -16,7 +16,7 @@ public class ProgWidgetPurify extends ProgWidgetAreaItemBase {
 
     @Override
     public ResourceLocation getTexture() {
-        return Textures.PROG_WIDGET_HARVEST;
+        return Textures.PROG_WIDGET_DIG;
     }
 
     public Goal getWidgetAI(IDroneBase drone, IProgWidget widget) {

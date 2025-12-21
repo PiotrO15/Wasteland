@@ -45,7 +45,7 @@ public class TerraformingDroneEntity extends AbstractBasicDroneEntity {
         DroneProgramBuilder loopBuilder = new DroneProgramBuilder();
         loopBuilder.add(new ProgWidgetLabel(), ProgWidgetText.withText("loop"));
         loopBuilder.add(new ProgWidgetLiquidImport(), ProgWidgetArea.fromPosition(clickPos, 2, 2,2));
-        loopBuilder.add(purifyPiece, ProgWidgetArea.fromPosition(clickPos, 16, 16, 16));
+        loopBuilder.add(purifyPiece, ProgWidgetArea.fromPosition(clickPos, 32, 16, 32));
         loopBuilder.add(new ProgWidgetJump(), ProgWidgetText.withText("loop"));
         widgets.addAll(loopBuilder.build());
 
