@@ -1,4 +1,4 @@
-package wasteland.item;
+package wasteland.common.item;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;

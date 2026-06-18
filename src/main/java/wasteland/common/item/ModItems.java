@@ -1,4 +1,4 @@
-package wasteland.item;
+package wasteland.common.item;
 
 import me.desht.pneumaticcraft.common.core.ModCreativeModeTab;
 import me.desht.pneumaticcraft.common.item.DroneItem;
@@ -18,6 +18,7 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Wasteland.MOD_ID);
 
     public static final RegistryObject<Item> COMPOST = ITEMS.register("compost", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BIODIVERSITY_SCANNER = ITEMS.register("biodiversity_scanner", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> TERRAFORMING_DRONE = ITEMS.register("terraforming_drone", () -> new DroneItem(TerraformingDroneEntity::new, false, DyeColor.LIME));
 
     public static void register(IEventBus eventBus) {
@@ -28,6 +29,9 @@ public class ModItems {
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(COMPOST);
+        }
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(BIODIVERSITY_SCANNER);
         }
         if (event.getTabKey() == ModCreativeModeTab.DEFAULT.getKey()) {
             event.accept(TERRAFORMING_DRONE);
