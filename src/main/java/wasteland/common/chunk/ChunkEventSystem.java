@@ -1,18 +1,16 @@
 package wasteland.common.chunk;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import wasteland.Wasteland;
-import wasteland.common.block.EcostabilizerBlockEntity;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class ChunkEventSystem {
-    private final Map<Long, Set<EcostabilizerBlockEntity>> chunkToListeners = new HashMap<>();
-    private final Map<EcostabilizerBlockEntity, Set<Long>> listenerToChunks = new HashMap<>();
+    private final Map<Long, Set<BlockPos>> chunkToListeners = new HashMap<>();
+    private final Map<BlockPos, Set<Long>> listenerToChunks = new HashMap<>();
 
     private final Map<BlockPos, Integer> ecostabilizerData =  new HashMap<>();
 
@@ -23,22 +21,22 @@ public class ChunkEventSystem {
         return instance;
     }
 
-    public void registerListener(BlockPos stabilizer, int chunkRadius, EcostabilizerBlockEntity entity) {
+    public void registerListener(BlockPos stabilizer, int chunkRadius) {
         ChunkPos center = new ChunkPos(stabilizer);
         Set<Long> keys = new HashSet<>();
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
                 long key = ChunkPos.asLong(center.x + dx, center.z + dz);
-                chunkToListeners.computeIfAbsent(key, k -> new HashSet<>()).add(entity);
+                chunkToListeners.computeIfAbsent(key, k -> new HashSet<>()).add(stabilizer);
                 keys.add(key);
             }
         }
 
-        listenerToChunks.put(entity, keys);
+        listenerToChunks.put(stabilizer, keys);
     }
 
-    public int computeStats(BlockPos stabilizer, int chunkRadius, Level level) {
+    public void computeStats(BlockPos stabilizer, int chunkRadius, Level level) {
         int value = 0;
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
@@ -59,39 +57,49 @@ public class ChunkEventSystem {
             }
         }
         ecostabilizerData.put(stabilizer, value);
-        return value;
+        Wasteland.LOGGER.warn("Computed biodiversity {}", value);
     }
 
-    public void unregisterListener(EcostabilizerBlockEntity entity) {
+    public void unregisterListener(BlockPos entity) {
         Set<Long> keys = listenerToChunks.remove(entity);
         if (keys == null) return;
 
         for (long key : keys) {
-            Set<EcostabilizerBlockEntity> set = chunkToListeners.get(key);
+            Set<BlockPos> set = chunkToListeners.get(key);
             if (set != null) {
                 set.remove(entity);
                 if (set.isEmpty()) chunkToListeners.remove(key);
             }
         }
-        ecostabilizerData.remove(entity.getBlockPos());
+        ecostabilizerData.remove(entity);
     }
 
     public void notifyIncrease(BlockPos pos, int amount) {
-        notify(new ChunkPos(pos), entity -> entity.increase(amount));
+        notify(new ChunkPos(pos), entity -> {
+            int value = ecostabilizerData.getOrDefault(entity, 0) + amount;
+            ecostabilizerData.put(entity, value);
+            Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, ecostabilizerData.getOrDefault(entity, 0));
+        });
     }
 
     public void notifyDecrease(BlockPos pos, int amount) {
-        notify(new ChunkPos(pos), entity -> entity.decrease(amount));
+        notify(new ChunkPos(pos), entity -> {
+            int value = ecostabilizerData.getOrDefault(entity,  0) - amount;
+            ecostabilizerData.put(entity, value);
+            Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, ecostabilizerData.getOrDefault(entity, 0));
+        });
     }
 
-    private void notify(ChunkPos pos, Consumer<EcostabilizerBlockEntity> action) {
-        Set<EcostabilizerBlockEntity> listeners =
+    public int getBiodiversity(BlockPos pos) {
+        return ecostabilizerData.getOrDefault(pos, 0);
+    }
+
+    private void notify(ChunkPos pos, Consumer<BlockPos> action) {
+        Set<BlockPos> listeners =
                 chunkToListeners.get(ChunkPos.asLong(pos.x, pos.z));
         if (listeners == null) return;
 
         // Snapshot to avoid issues if a listener modifies the set
-        new ArrayList<>(listeners).stream()
-                .filter(e -> !e.isRemoved())
-                .forEach(action);
+        new ArrayList<>(listeners).forEach(action);
     }
 }

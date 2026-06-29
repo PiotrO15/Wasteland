@@ -11,11 +11,15 @@ import wasteland.common.chunk.VerdantChunk;
 
 @Mixin(LevelChunk.class)
 public class LevelChunkMixin {
-    @Inject(method = "setBlockState", at = @At("HEAD"))
+    @Inject(method = "setBlockState", at = @At("RETURN"))
     public void onStateChange(BlockPos pos, BlockState state, boolean isMoving, CallbackInfoReturnable<BlockState> cir) {
+        if (cir.getReturnValue() == null) return;
+
         LevelChunk levelChunk = (LevelChunk)(Object) this;
-        if(!levelChunk.getLevel().isClientSide()) {
-            VerdantChunk.getChunk(pos, levelChunk.getLevel()).notifyChange(pos, levelChunk.getBlockState(pos), state);
-        }
+        if (levelChunk.getLevel().isClientSide())
+            return;
+
+        BlockState oldState = cir.getReturnValue();
+        VerdantChunk.getChunk(pos, levelChunk.getLevel()).notifyChange(pos, oldState, state);
     }
 }

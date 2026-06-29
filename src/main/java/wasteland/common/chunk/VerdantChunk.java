@@ -10,7 +10,6 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.util.INBTSerializable;
 import wasteland.Wasteland;
-import wasteland.common.block.EcostabilizerBlockEntity;
 
 import java.util.*;
 
@@ -34,6 +33,9 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     }
 
     public void increment(BlockPos pos, BlockGroup group) {
+        if (chunk.getLevel().isClientSide())
+            return;
+
         data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
                 .merge(group, 1, Integer::sum);
         ChunkEventSystem.getInstance().notifyIncrease(pos, 1);
@@ -41,6 +43,9 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     }
 
     public void decrement(BlockPos pos, BlockGroup group) {
+        if (chunk.getLevel().isClientSide())
+            return;
+
         int idx = subchunkIndex(pos);
         EnumMap<BlockGroup, Integer> subchunk = data.get(idx);
         if (subchunk == null) return;

@@ -20,9 +20,8 @@ import net.minecraftforge.registries.RegistryObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wasteland.client.ClientSetup;
-import wasteland.common.block.ModBlockEntities;
 import wasteland.common.block.ModBlocks;
-import wasteland.common.chunk.BiodiversityStateObserver;
+import wasteland.common.chunk.MBDEvents;
 import wasteland.common.chunk.VerdantChunk;
 import wasteland.common.chunk.VerdantChunkProvider;
 import wasteland.common.entity.ModEntityTypes;
@@ -44,7 +43,6 @@ public class Wasteland {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         ModBlocks.register(modEventBus);
-        ModBlockEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModEntityTypes.register(modEventBus);
 
@@ -59,7 +57,7 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(Compost.class);
         MinecraftForge.EVENT_BUS.register(BiodiversityScanner.class);
         MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
-        MinecraftForge.EVENT_BUS.register(BiodiversityStateObserver.class);
+        MinecraftForge.EVENT_BUS.register(MBDEvents.class);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
