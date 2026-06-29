@@ -5,14 +5,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.util.INBTSerializable;
 import wasteland.Wasteland;
+import wasteland.common.block.EcostabilizerBlockEntity;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @AutoRegisterCapability
 public class VerdantChunk implements INBTSerializable<CompoundTag> {
@@ -36,6 +36,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     public void increment(BlockPos pos, BlockGroup group) {
         data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
                 .merge(group, 1, Integer::sum);
+        ChunkEventSystem.getInstance().notifyIncrease(pos, 1);
         chunk.setUnsaved(true);
     }
 
@@ -47,12 +48,24 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
         subchunk.compute(group, (k, v) -> (v == null || v <= 1) ? null : v - 1);
 
         if (subchunk.isEmpty()) data.remove(idx);
+        ChunkEventSystem.getInstance().notifyDecrease(pos, 1);
         chunk.setUnsaved(true);
     }
 
     public int getLocalCount(BlockPos pos, BlockGroup group) {
         EnumMap<BlockGroup, Integer> subchunk = data.get(subchunkIndex(pos));
         return subchunk == null ? 0 : subchunk.getOrDefault(group, 0);
+    }
+
+    public void notifyChange(BlockPos pos, BlockState oldState, BlockState newState) {
+        if (oldState.getBlock() != newState.getBlock()) {
+            for (BlockGroup group : BlockGroup.values()) {
+                if (group.matches(oldState))
+                    decrement(pos, group);
+                if (group.matches(newState))
+                    increment(pos, group);
+            }
+        }
     }
 
     public int getTotalCount(BlockGroup group) {

@@ -107,6 +107,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name "firstdarkdev"
+        url "https://maven.firstdark.dev/snapshots"
+    }
 }
 
 dependencies {
@@ -118,6 +122,9 @@ dependencies {
     implementation fg.deobf("curse.maven:productivebees-377897:5566102")
     implementation fg.deobf("curse.maven:enchanted-witchcraft-560363:6638514")
     implementation fg.deobf("curse.maven:jei-238222:7270446")
+
+    implementation fg.deobf("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
+    implementation fg.deobf("com.lowdragmc.multiblocked2:Multiblocked2:${minecraft_version}-${mbd2_version}") { transitive = false }
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

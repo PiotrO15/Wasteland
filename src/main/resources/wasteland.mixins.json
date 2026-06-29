@@ -10,6 +10,7 @@
     "AgriPlantAllowsClippingPatch",
     "EnchantedCauldronPatch",
     "EnchantedDistillingCategoryPatch",
+    "LevelChunkMixin",
     "ProductiveBeesSussyBeePatch"
   ],
   "compatibilityLevel": "JAVA_17",

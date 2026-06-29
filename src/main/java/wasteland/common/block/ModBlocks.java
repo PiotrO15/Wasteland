@@ -54,6 +54,8 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> DEAD_MUSHROOM_STEM = registerBlockItem("dead_mushroom_stem", new Block(BlockBehaviour.Properties.copy(Blocks.MUSHROOM_STEM)));
 
+    public static final RegistryObject<Block> ECOSTABILIZER = registerBlockItem("ecostabilizer", new EcostabilizerBlock(BlockBehaviour.Properties.copy(Blocks.STONE)));
+
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         return BLOCKS.register(name, block);
     }
