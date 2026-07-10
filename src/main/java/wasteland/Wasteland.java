@@ -21,14 +21,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wasteland.client.ClientSetup;
 import wasteland.common.block.ModBlocks;
-import wasteland.common.chunk.MBDEvents;
+import wasteland.common.chunk.EcostabilizerEvents;
 import wasteland.common.chunk.VerdantChunk;
 import wasteland.common.chunk.VerdantChunkProvider;
+import wasteland.common.block.ecostabilizer.task.EcosystemTaskRegistry;
 import wasteland.common.entity.ModEntityTypes;
 import wasteland.common.entity.drone.ProgWidgetPurify;
 import wasteland.common.item.BiodiversityScanner;
 import wasteland.common.item.Compost;
 import wasteland.common.item.ModItems;
+import wasteland.common.registry.ModRegistries;
 import wasteland.tree.BeehiveProbabilityModifier;
 
 @Mod(Wasteland.MOD_ID)
@@ -45,9 +47,11 @@ public class Wasteland {
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
         ModEntityTypes.register(modEventBus);
+        EcosystemTaskRegistry.registerTaskTypes();
 
         modEventBus.addListener(ModBlocks::buildContents);
         modEventBus.addListener(ModItems::buildContents);
+        modEventBus.addListener(ModRegistries::registerDataRegistries);
 
         if (FMLEnvironment.dist.isClient()) {
             ClientSetup.onModConstruction();
@@ -57,7 +61,7 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(Compost.class);
         MinecraftForge.EVENT_BUS.register(BiodiversityScanner.class);
         MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
-        MinecraftForge.EVENT_BUS.register(MBDEvents.class);
+        MinecraftForge.EVENT_BUS.register(EcostabilizerEvents.class);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
     }

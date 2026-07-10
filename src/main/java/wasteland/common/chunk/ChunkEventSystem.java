@@ -1,5 +1,6 @@
 package wasteland.common.chunk;
 
+import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -13,6 +14,7 @@ public class ChunkEventSystem {
     private final Map<BlockPos, Set<Long>> listenerToChunks = new HashMap<>();
 
     private final Map<BlockPos, Map<BlockGroup, Integer>> ecostabilizerData =  new HashMap<>();
+    private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
 
     private static ChunkEventSystem instance;
 
@@ -21,19 +23,20 @@ public class ChunkEventSystem {
         return instance;
     }
 
-    public void registerListener(BlockPos stabilizer, int chunkRadius) {
-        ChunkPos center = new ChunkPos(stabilizer);
+    public void registerListener(MBDMachine stabilizer, int chunkRadius) {
+        ChunkPos center = new ChunkPos(stabilizer.getPos());
         Set<Long> keys = new HashSet<>();
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
                 long key = ChunkPos.asLong(center.x + dx, center.z + dz);
-                chunkToListeners.computeIfAbsent(key, k -> new HashSet<>()).add(stabilizer);
+                chunkToListeners.computeIfAbsent(key, k -> new HashSet<>()).add(stabilizer.getPos());
                 keys.add(key);
             }
         }
 
-        listenerToChunks.put(stabilizer, keys);
+        listenerToChunks.put(stabilizer.getPos(), keys);
+        machineData.put(stabilizer.getPos(), stabilizer);
     }
 
     public void computeStats(BlockPos stabilizer, int chunkRadius, Level level) {
@@ -74,20 +77,23 @@ public class ChunkEventSystem {
             }
         }
         ecostabilizerData.remove(entity);
+        machineData.remove(entity);
     }
 
-    public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount) {
+    public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
         notify(new ChunkPos(pos), entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
             ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
 
-    public void notifyDecrease(BlockPos pos, BlockGroup blockGroup, int amount) {
+    public void notifyDecrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
         notify(new ChunkPos(pos), entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
             ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
