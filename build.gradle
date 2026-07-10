@@ -111,6 +111,10 @@ repositories {
         name "firstdarkdev"
         url "https://maven.firstdark.dev/snapshots"
     }
+    maven {
+        name = "TerraformersMC"
+        url = "https://maven.terraformersmc.com/"
+    }
 }
 
 dependencies {
@@ -125,6 +129,8 @@ dependencies {
 
     implementation fg.deobf("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
     implementation fg.deobf("com.lowdragmc.multiblocked2:Multiblocked2:${minecraft_version}-${mbd2_version}") { transitive = false }
+
+    compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}:api")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

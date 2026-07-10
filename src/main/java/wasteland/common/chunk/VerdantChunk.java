@@ -38,7 +38,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
 
         data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
                 .merge(group, 1, Integer::sum);
-        ChunkEventSystem.getInstance().notifyIncrease(pos, 1);
+        ChunkEventSystem.getInstance().notifyIncrease(pos, group, 1);
         chunk.setUnsaved(true);
     }
 
@@ -53,7 +53,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
         subchunk.compute(group, (k, v) -> (v == null || v <= 1) ? null : v - 1);
 
         if (subchunk.isEmpty()) data.remove(idx);
-        ChunkEventSystem.getInstance().notifyDecrease(pos, 1);
+        ChunkEventSystem.getInstance().notifyDecrease(pos, group, 1);
         chunk.setUnsaved(true);
     }
 

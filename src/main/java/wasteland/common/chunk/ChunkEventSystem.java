@@ -12,7 +12,7 @@ public class ChunkEventSystem {
     private final Map<Long, Set<BlockPos>> chunkToListeners = new HashMap<>();
     private final Map<BlockPos, Set<Long>> listenerToChunks = new HashMap<>();
 
-    private final Map<BlockPos, Integer> ecostabilizerData =  new HashMap<>();
+    private final Map<BlockPos, Map<BlockGroup, Integer>> ecostabilizerData =  new HashMap<>();
 
     private static ChunkEventSystem instance;
 
@@ -37,7 +37,7 @@ public class ChunkEventSystem {
     }
 
     public void computeStats(BlockPos stabilizer, int chunkRadius, Level level) {
-        int value = 0;
+        Map<BlockGroup, Integer> groups = new HashMap<>();
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
@@ -47,8 +47,10 @@ public class ChunkEventSystem {
                             .getCapability(Wasteland.VERDANT_CHUNK_CAPABILITY).resolve().orElse(null);
 
                     if (verdantChunk != null) {
-                        value += verdantChunk.getLocalCount(newPos, BlockGroup.GRASSES);
-                        Wasteland.LOGGER.warn("Adding {} for subchunk at {}", verdantChunk.getLocalCount(newPos, BlockGroup.GRASSES), newPos);
+                        for (BlockGroup blockGroup : BlockGroup.values()) {
+                            groups.put(blockGroup, groups.getOrDefault(blockGroup, 0) + verdantChunk.getLocalCount(newPos, blockGroup));
+                            Wasteland.LOGGER.warn("Adding {} {} for subchunk at {}", verdantChunk.getLocalCount(newPos, blockGroup), blockGroup, newPos);
+                        }
                     }
                 } else {
                     BlockPos newPos = new BlockPos(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
@@ -56,8 +58,8 @@ public class ChunkEventSystem {
                 }
             }
         }
-        ecostabilizerData.put(stabilizer, value);
-        Wasteland.LOGGER.warn("Computed biodiversity {}", value);
+        ecostabilizerData.put(stabilizer, groups);
+        Wasteland.LOGGER.warn("Computed biodiversity");
     }
 
     public void unregisterListener(BlockPos entity) {
@@ -74,24 +76,24 @@ public class ChunkEventSystem {
         ecostabilizerData.remove(entity);
     }
 
-    public void notifyIncrease(BlockPos pos, int amount) {
+    public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount) {
         notify(new ChunkPos(pos), entity -> {
-            int value = ecostabilizerData.getOrDefault(entity, 0) + amount;
-            ecostabilizerData.put(entity, value);
-            Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, ecostabilizerData.getOrDefault(entity, 0));
+            int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
+            ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
 
-    public void notifyDecrease(BlockPos pos, int amount) {
+    public void notifyDecrease(BlockPos pos, BlockGroup blockGroup, int amount) {
         notify(new ChunkPos(pos), entity -> {
-            int value = ecostabilizerData.getOrDefault(entity,  0) - amount;
-            ecostabilizerData.put(entity, value);
-            Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, ecostabilizerData.getOrDefault(entity, 0));
+            int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
+            ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
 
-    public int getBiodiversity(BlockPos pos) {
-        return ecostabilizerData.getOrDefault(pos, 0);
+    public int getBiodiversity(BlockPos pos, BlockGroup blockGroup) {
+        return ecostabilizerData.getOrDefault(pos, Map.of()).getOrDefault(blockGroup, 0);
     }
 
     private void notify(ChunkPos pos, Consumer<BlockPos> action) {
