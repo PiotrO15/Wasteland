@@ -62,7 +62,7 @@ public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation
 
     @Override
     public String[] getTooltip() {
-        return new String[] {"Restore at least " + getGoal() + " blocks² to " + biomeType.name().toLowerCase() + " stage"};
+        return new String[] {"Restore an area of at least " + getGoal() + " blocks² to " + biomeType.name().toLowerCase() + " stage"};
     }
 
     public enum BiomeType {

@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wasteland.client.ClientSetup;
 import wasteland.common.block.ModBlocks;
+import wasteland.common.block.ecostabilizer.EcostabilizerScreen;
 import wasteland.common.chunk.EcostabilizerEvents;
 import wasteland.common.chunk.VerdantChunk;
 import wasteland.common.chunk.VerdantChunkProvider;
@@ -62,6 +63,7 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(BiodiversityScanner.class);
         MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
         MinecraftForge.EVENT_BUS.register(EcostabilizerEvents.class);
+        MinecraftForge.EVENT_BUS.register(EcostabilizerScreen.class);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
