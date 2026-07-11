@@ -15,13 +15,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
-import wasteland.common.block.ecostabilizer.task.BlockEcosystemTask;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.registry.ModRegistries;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.DoubleSupplier;
 
 public class EcostabilizerEvents {
     private static final ResourceLocation machineId = new ResourceLocation("wasteland", "ecostabilizer");
@@ -132,31 +130,23 @@ public class EcostabilizerEvents {
 
             tabs.switchTag(tabs.tabs.get(stageWidgets.get(transformationStage - 1)));
         }
+
+        event.getRoot().addWidget(new ImageWidget(-20, 17, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/temperate_ecosystem.png")).appendHoverTooltips("Found Ecosystem: Temperate", "", "Ecosystem is based on the nearby biomes.", "It cannot be changed."));
     }
 
     private static WidgetGroup createTaskCard(int y, BlockPos pos, EcosystemTask task, RegistryAccess registryAccess, boolean clientSide) {
         WidgetGroup taskGroup = new WidgetGroup(0, y, 152, 24);
         taskGroup.setBackground(new ResourceTexture("wasteland:textures/gui/task_card.png"));
 
-        int progress = 0;
-        DoubleSupplier progressSupplier = () -> 0.0;
-        IGuiTexture taskIcon = IGuiTexture.EMPTY;
-
-        if (task instanceof BlockEcosystemTask blockTask) {
-            progress = ChunkEventSystem.getInstance().getBiodiversity(pos, blockTask.blockGroup());
-            progressSupplier = () -> blockTask.getProgress(pos);
-            taskIcon = new ItemStackTexture(blockTask.blockGroup().asItems(registryAccess));
-        }
-
-        ProgressWidget taskProgress = new ProgressWidget(progressSupplier, 23, 15, 125, 4);
+        ProgressWidget taskProgress = new ProgressWidget(() -> task.getProgress(pos), 23, 15, 125, 4);
         taskProgress.setFillDirection(ProgressTexture.FillDirection.LEFT_TO_RIGHT);
         taskProgress.setProgressTexture(new ProgressTexture(new ResourceTexture("wasteland:textures/gui/small_bar_empty.png"), new ResourceTexture("wasteland:textures/gui/small_bar_filled.png")));
         taskGroup.addWidget(taskProgress);
 
-        taskGroup.addWidget(new ImageWidget(3, 3, 16, 16, taskIcon).appendHoverTooltips("Place blocks in Ecostabilizer's range"));
+        taskGroup.addWidget(new ImageWidget(3, 3, 16, 16, task.getIcon(registryAccess)).appendHoverTooltips(task.getTooltip()));
 
         TextTextureWidget progressText = new TextTextureWidget(23, 6, 125, 10,
-                progress + "/" + task.getGoal());
+                task.getProgressValue(pos) + "/" + task.getGoal());
         progressText.getTextTexture()
                 .setDropShadow(false)
                 .setColor(0x333333);

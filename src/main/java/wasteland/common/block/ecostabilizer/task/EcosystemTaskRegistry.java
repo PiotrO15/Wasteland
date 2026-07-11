@@ -19,6 +19,7 @@ public class EcosystemTaskRegistry {
     }
 
     public static void registerTaskTypes() {
-        registerTaskType(BlockEcosystemTask.Id, BlockEcosystemTask.CODEC);
+        registerTaskType(BlockEcosystemTask.id, BlockEcosystemTask.CODEC);
+        registerTaskType(BiomeEcosystemTask.id, BiomeEcosystemTask.CODEC);
     }
 }

@@ -9,8 +9,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import wasteland.common.ModTags;
 
-import java.util.Optional;
-
 public enum BlockGroup {
     GRASSES(ModTags.Blocks.GRASSES),
     FLOWERS(ModTags.Blocks.FLOWERS),
@@ -41,12 +39,5 @@ public enum BlockGroup {
             items = blocks.get().stream().map(block -> block.get().asItem()).toArray(Item[]::new);
         }
         return items;
-    }
-
-    public static Optional<BlockGroup> fromState(BlockState state) {
-        for (BlockGroup group : VALUES) {
-            if (group.matches(state)) return Optional.of(group);
-        }
-        return Optional.empty();
     }
 }
