@@ -8,6 +8,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import wasteland.common.chunk.ChunkEventSystem;
+
+import java.util.Set;
 
 public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation entry, boolean optional) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "biome_task");
@@ -33,12 +36,12 @@ public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation
 
     @Override
     public int getProgressValue(BlockPos pos) {
-        return 0;
+        return ChunkEventSystem.getInstance().getBiomeCount(pos, biomeType);
     }
 
     @Override
     public double getProgress(BlockPos pos) {
-        return 0;
+        return Math.min(1, (double) getProgressValue(pos) / getGoal());
     }
 
     @Override
@@ -59,12 +62,22 @@ public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation
 
     @Override
     public String[] getTooltip() {
-        return new String[0];
+        return new String[] {"Restore at least " + getGoal() + " blocks² to " + biomeType.name().toLowerCase() + " stage"};
     }
 
     public enum BiomeType {
-        RECOVERING,
-        VERDANT;
+        RECOVERING(Set.of("recovering", "minecraft")),
+        VERDANT(Set.of("minecraft"));
+
+        private final Set<String> allowedNamespaces;
+
+        BiomeType(Set<String> allowedNamespaces) {
+            this.allowedNamespaces = allowedNamespaces;
+        }
+
+        public Set<String> allowedNamespaces() {
+            return allowedNamespaces;
+        }
 
         public static final Codec<BiomeType> CODEC =
                 Codec.STRING.xmap(

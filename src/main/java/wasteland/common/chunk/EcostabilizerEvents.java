@@ -32,11 +32,16 @@ public class EcostabilizerEvents {
         }
 
         if (!event.getMachine().getLevel().isClientSide()) {
+
+            Ecosystem ecosystem = getEcosystemType(event.getMachine());
+
+            if (ecosystem == null) {
+                return;
+            }
+
             ChunkEventSystem.getInstance().registerListener(event.getMachine(), 3);
             ChunkEventSystem.getInstance().computeStats(event.getMachine().getPos(), 12, event.getMachine().getLevel());
-
-            if (event.getMachine().getCustomData().getString("ecosystem").isEmpty())
-                getEcosystemType(event.getMachine());
+            ChunkEventSystem.getInstance().computeBiomeStats(event.getMachine().getPos(), 12, event.getMachine().getLevel(), ecosystem.getAnchorTag());
 
             recalculateStages(event.getMachine().getPos(), event.getMachine(), event.getMachine().getLevel().registryAccess());
 
@@ -178,13 +183,21 @@ public class EcostabilizerEvents {
         return taskGroup;
     }
 
-    public static void getEcosystemType(MBDMachine machine) {
-        for (Ecosystem ecosystem : Ecosystem.values()) {
-            if (ecosystem.matches(machine.getLevel().getBiome(machine.getPos()))) {
-                machine.getCustomData().putString("ecosystem", ecosystem.getFriendlyName());
-                return;
+    public static Ecosystem getEcosystemType(MBDMachine machine) {
+        String ecosystemName = machine.getCustomData().getString("ecosystem");
+
+        if (ecosystemName.isEmpty()) {
+            for (Ecosystem ecosystem : Ecosystem.values()) {
+                if (ecosystem.matches(machine.getLevel().getBiome(machine.getPos()))) {
+                    machine.getCustomData().putString("ecosystem", ecosystem.getFriendlyName());
+                    return ecosystem;
+                }
             }
+        } else {
+            return Ecosystem.fromName(ecosystemName);
         }
+
+        return null;
     }
 
     public static void recalculateStages(BlockPos pos, MBDMachine machine, RegistryAccess registryAccess) {

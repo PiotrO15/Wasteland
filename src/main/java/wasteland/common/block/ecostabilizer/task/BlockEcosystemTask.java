@@ -55,6 +55,6 @@ public record BlockEcosystemTask(int goal, ResourceLocation entry, BlockGroup bl
 
     @Override
     public String[] getTooltip() {
-        return new String[0];
+        return new String[] {"Place at least " + getGoal() + " blocks of given types"};
     }
 }

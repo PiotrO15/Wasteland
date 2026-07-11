@@ -7,7 +7,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
-import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import wasteland.Wasteland;
@@ -24,7 +23,6 @@ public class VerdantChunkProvider implements ICapabilityProvider, ICapabilitySer
     private VerdantChunk getVerdantChunk() {
         if (this.verdantChunk == null) {
             this.verdantChunk = new VerdantChunk(this.chunk);
-            Wasteland.LOGGER.log(Level.WARN, "Created VerdantChunk for chunk at {}", this.chunk.getPos());
         }
         return this.verdantChunk;
     }

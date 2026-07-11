@@ -21,9 +21,10 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
 
     private final Map<Integer, EnumMap<BlockGroup, Integer>> data = new HashMap<>();
 
+    private boolean scanned = false;
+
     public VerdantChunk(LevelChunk chunk) {
         this.chunk = chunk;
-        Wasteland.LOGGER.log(org.apache.logging.log4j.Level.WARN, "Initializing VerdantChunk for chunk at {}", chunk.getPos());
     }
 
     private int subchunkIndex(BlockPos pos) {
@@ -85,8 +86,9 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag root = new CompoundTag();
-        ListTag subchunkList = new ListTag();
+        root.putBoolean("scanned", scanned);
 
+        ListTag subchunkList = new ListTag();
         for (Map.Entry<Integer, EnumMap<BlockGroup, Integer>> entry : data.entrySet()) {
             CompoundTag subchunkTag = new CompoundTag();
             subchunkTag.putInt("idx", entry.getKey());
@@ -105,8 +107,9 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         data.clear();
-        ListTag subchunkList = nbt.getList("subchunks", Tag.TAG_COMPOUND);
+        scanned = nbt.getBoolean("scanned");
 
+        ListTag subchunkList = nbt.getList("subchunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < subchunkList.size(); i++) {
             CompoundTag subchunkTag = subchunkList.getCompound(i);
             int idx = subchunkTag.getInt("idx");
@@ -130,5 +133,55 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
                 .orElseThrow(() -> new IllegalStateException(
                         "VerdantChunk capability missing on chunk at " + pos
                 ));
+    }
+
+    public boolean isScanned() {
+        return scanned;
+    }
+
+    private void addSilent(BlockPos pos, BlockGroup group) {
+        data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
+                .merge(group, 1, Integer::sum);
+    }
+
+    public void scanChunk() {
+        if (scanned) return;
+        if (chunk.getLevel().isClientSide()) return;
+
+        data.clear();
+
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+        int baseX = chunk.getPos().getMinBlockX();
+        int baseZ = chunk.getPos().getMinBlockZ();
+
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+
+        for (int y = minY; y < maxY; y++) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    mutable.set(baseX + x, y, baseZ + z);
+                    BlockState state = chunk.getBlockState(mutable);
+
+                    for (BlockGroup group : BlockGroup.VALUES) {
+                        if (group.matches(state)) {
+                            addSilent(mutable, group);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!data.isEmpty()) {
+            Wasteland.LOGGER.warn("Scanned chunk at {} and found", chunk.getPos());
+            data.forEach((k, v) -> {
+                v.forEach((k1, v1) -> {
+                    Wasteland.LOGGER.warn("Subchunk {}: found {} of {}", k, v1, k1);
+                });
+            });
+        }
+
+        scanned = true;
+        chunk.setUnsaved(true);
     }
 }
