@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
+import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.registry.ModRegistries;
@@ -30,15 +31,17 @@ public class EcostabilizerEvents {
             return;
         }
 
-        ChunkEventSystem.getInstance().registerListener(event.getMachine(), 3);
-        ChunkEventSystem.getInstance().computeStats(event.getMachine().getPos(), 12, event.getMachine().getLevel());
+        if (!event.getMachine().getLevel().isClientSide()) {
+            ChunkEventSystem.getInstance().registerListener(event.getMachine(), 3);
+            ChunkEventSystem.getInstance().computeStats(event.getMachine().getPos(), 12, event.getMachine().getLevel());
 
-        event.getMachine().getCustomData().putString("ecosystem", "temperate");
+            if (event.getMachine().getCustomData().getString("ecosystem").isEmpty())
+                getEcosystemType(event.getMachine());
 
-        if (!event.getMachine().getLevel().isClientSide())
             recalculateStages(event.getMachine().getPos(), event.getMachine(), event.getMachine().getLevel().registryAccess());
 
-        Wasteland.LOGGER.warn("Computed data for machine formed with id {} at {}", event.getMachine().getDefinition().id(), event.getMachine().getPos());
+            Wasteland.LOGGER.warn("Computed data for machine formed with id {} at {}", event.getMachine().getDefinition().id(), event.getMachine().getPos());
+        }
     }
 
     @SubscribeEvent
@@ -72,11 +75,7 @@ public class EcostabilizerEvents {
         if (!machine.getDefinition().id().equals(machineId))
             return;
 
-        if (!event.getPlayer().level().isClientSide)
-            event.getPlayer().level().registryAccess().lookupOrThrow(ModRegistries.ECOSYSTEM_TASK).listElementIds().forEach(id -> Wasteland.LOGGER.warn("Found Ecosystem task with id {}", id));
-
-        Widget tabWidget = event.getRoot().getFirstWidgetById("tabs");
-
+        String ecosystemType = machine.getCustomData().getString("ecosystem");
         int transformationStage = machine.getCustomData().getInt("transformation_stage");
 
         RegistryAccess registryAccess;
@@ -86,10 +85,19 @@ public class EcostabilizerEvents {
             registryAccess = event.getPlayer().level().registryAccess();
         }
 
+        if (ecosystemType.isEmpty()) {
+            event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> IGuiTexture.MISSING_TEXTURE));
+
+            event.getRoot().getFirstWidgetById("ecosystem_tab").appendHoverTooltips("Could not find a matching ecosystem!", "", "This can happen in river biomes or outside overworld.", "Move the machine to a different place.");
+
+            return;
+        }
+
+        Widget tabWidget = event.getRoot().getFirstWidgetById("tabs");
         if (tabWidget instanceof TabContainer tabs) {
             Holder<EcosystemDefinition> ecosystem = registryAccess
                     .lookupOrThrow(ModRegistries.ECOSYSTEM)
-                    .getOrThrow(ResourceKey.create(ModRegistries.ECOSYSTEM, new ResourceLocation(Wasteland.MOD_ID, "temperate")));
+                    .getOrThrow(ResourceKey.create(ModRegistries.ECOSYSTEM, new ResourceLocation(Wasteland.MOD_ID, ecosystemType)));
 
             List<TabButton> stageWidgets = List.of(
                     (TabButton) tabs.getFirstWidgetById("stage_1"),
@@ -131,7 +139,10 @@ public class EcostabilizerEvents {
             tabs.switchTag(tabs.tabs.get(stageWidgets.get(transformationStage - 1)));
         }
 
-        event.getRoot().addWidget(new ImageWidget(-20, 17, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/temperate_ecosystem.png")).appendHoverTooltips("Found Ecosystem: Temperate", "", "Ecosystem is based on the nearby biomes.", "It cannot be changed."));
+        event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/" + ecosystemType + "_ecosystem.png")));
+        event.getRoot().getFirstWidgetById("ecosystem_tab").appendHoverTooltips("Found Ecosystem: " + ecosystemType, "", "Ecosystem is based on the nearby biomes.", "It cannot be changed.");
+
+        event.getRoot().getFirstWidgetById("information_tab").appendHoverTooltips("Ecostabilizer Range: 24");
     }
 
     private static WidgetGroup createTaskCard(int y, BlockPos pos, EcosystemTask task, RegistryAccess registryAccess, boolean clientSide) {
@@ -165,6 +176,15 @@ public class EcostabilizerEvents {
         }
 
         return taskGroup;
+    }
+
+    public static void getEcosystemType(MBDMachine machine) {
+        for (Ecosystem ecosystem : Ecosystem.values()) {
+            if (ecosystem.matches(machine.getLevel().getBiome(machine.getPos()))) {
+                machine.getCustomData().putString("ecosystem", ecosystem.getFriendlyName());
+                return;
+            }
+        }
     }
 
     public static void recalculateStages(BlockPos pos, MBDMachine machine, RegistryAccess registryAccess) {
