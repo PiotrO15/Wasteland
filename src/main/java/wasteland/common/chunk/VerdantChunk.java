@@ -172,15 +172,6 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
             }
         }
 
-        if (!data.isEmpty()) {
-            Wasteland.LOGGER.warn("Scanned chunk at {} and found", chunk.getPos());
-            data.forEach((k, v) -> {
-                v.forEach((k1, v1) -> {
-                    Wasteland.LOGGER.warn("Subchunk {}: found {} of {}", k, v1, k1);
-                });
-            });
-        }
-
         scanned = true;
         chunk.setUnsaved(true);
     }

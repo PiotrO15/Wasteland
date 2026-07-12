@@ -12,14 +12,13 @@ import wasteland.common.chunk.ChunkEventSystem;
 
 import java.util.Set;
 
-public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation entry, boolean optional) implements EcosystemTask {
+public record BiomeEcosystemTask(int goal, BiomeType biomeType, boolean optional) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "biome_task");
 
     public static final MapCodec<BiomeEcosystemTask> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(BiomeEcosystemTask::goal),
                     BiomeType.CODEC.fieldOf("biome_type").forGetter(BiomeEcosystemTask::biomeType),
-                    ResourceLocation.CODEC.fieldOf("entry").forGetter(BiomeEcosystemTask::entry),
                     Codec.BOOL.optionalFieldOf("optional", false).forGetter(BiomeEcosystemTask::optional)
             ).apply(instance, BiomeEcosystemTask::new)
     );
@@ -42,11 +41,6 @@ public record BiomeEcosystemTask(int goal, BiomeType biomeType, ResourceLocation
     @Override
     public double getProgress(BlockPos pos) {
         return Math.min(1, (double) getProgressValue(pos) / getGoal());
-    }
-
-    @Override
-    public ResourceLocation getEntry() {
-        return entry;
     }
 
     @Override

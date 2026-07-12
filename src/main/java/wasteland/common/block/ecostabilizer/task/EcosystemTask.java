@@ -13,9 +13,6 @@ public interface EcosystemTask {
     int getProgressValue(BlockPos pos);
 
     double getProgress(BlockPos pos);
-
-    ResourceLocation getEntry();
-
     boolean optional();
 
     IGuiTexture getIcon(RegistryAccess registryAccess);

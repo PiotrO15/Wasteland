@@ -17,7 +17,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
+import wasteland.common.chunk.EcostabilizerEvents;
 import wasteland.common.registry.ModRegistries;
+import wasteland.compat.ModEmiPlugin;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,8 +33,9 @@ public class EcostabilizerScreen {
         if (!machine.getDefinition().id().equals(machineId))
             return;
 
-        String ecosystemType = machine.getCustomData().getString("ecosystem");
-        int transformationStage = machine.getCustomData().getInt("transformation_stage");
+        Ecosystem ecosystemType = EcostabilizerEvents.getEcosystem(machine);
+        int transformationStage = EcostabilizerEvents.getStage(machine);
+        int radius = EcostabilizerEvents.getRadius(machine);
 
         RegistryAccess registryAccess;
         if (event.getPlayer().level().isClientSide) {
@@ -41,7 +44,7 @@ public class EcostabilizerScreen {
             registryAccess = event.getPlayer().level().registryAccess();
         }
 
-        if (ecosystemType.isEmpty()) {
+        if (ecosystemType == null) {
             event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> IGuiTexture.MISSING_TEXTURE));
 
             event.getRoot().getFirstWidgetById("ecosystem_tab").appendHoverTooltips("Could not find a matching ecosystem!", "", "This can happen in river biomes or outside overworld.", "Move the machine to a different place.");
@@ -53,7 +56,7 @@ public class EcostabilizerScreen {
         if (tabWidget instanceof TabContainer tabs) {
             Holder<EcosystemDefinition> ecosystem = registryAccess
                     .lookupOrThrow(ModRegistries.ECOSYSTEM)
-                    .getOrThrow(ResourceKey.create(ModRegistries.ECOSYSTEM, new ResourceLocation(Wasteland.MOD_ID, ecosystemType)));
+                    .getOrThrow(ResourceKey.create(ModRegistries.ECOSYSTEM, new ResourceLocation(Wasteland.MOD_ID, ecosystemType.getFriendlyName())));
 
             List<TabButton> stageWidgets = List.of(
                     (TabButton) tabs.getFirstWidgetById("stage_1"),
@@ -77,7 +80,7 @@ public class EcostabilizerScreen {
 
                 AtomicInteger y = new AtomicInteger();
                 ecosystem.get().tasksForStage(currentStage).forEach(task -> {
-                    scrollableWidgetGroup.addWidget(createTaskCard(y.get(), event.getMachine().getPos(), task.value(), registryAccess, event.getPlayer().level().isClientSide));
+                    scrollableWidgetGroup.addWidget(createTaskCard(y.get(), event.getMachine().getPos(), task, registryAccess, event.getPlayer().level().isClientSide));
                     y.addAndGet(28);
                 });
 
@@ -92,16 +95,19 @@ public class EcostabilizerScreen {
                 });
             });
 
-            tabs.switchTag(tabs.tabs.get(stageWidgets.get(transformationStage - 1)));
+            int selectedTab = Math.min(transformationStage, stageWidgets.size());
+            tabs.switchTag(tabs.tabs.get(stageWidgets.get(selectedTab - 1)));
         }
 
-        event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/" + ecosystemType + "_ecosystem.png")));
-        event.getRoot().getFirstWidgetById("ecosystem_tab").appendHoverTooltips("Found Ecosystem: " + ecosystemType, "", "Ecosystem is based on the nearby biomes.", "It cannot be changed.");
+        event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/" + ecosystemType.getFriendlyName() + "_ecosystem.png")));
+        event.getRoot().getFirstWidgetById("ecosystem_tab").appendHoverTooltips("Found Ecosystem: " + ecosystemType.getFriendlyName(), "", "Ecosystem is based on the nearby biomes.", "It cannot be changed.");
 
-        event.getRoot().getFirstWidgetById("information_tab").appendHoverTooltips("Ecostabilizer Range: 24");
+        event.getRoot().getFirstWidgetById("information_tab").appendHoverTooltips("Ecostabilizer Radius: " + radius);
     }
 
-    private static WidgetGroup createTaskCard(int y, BlockPos pos, EcosystemTask task, RegistryAccess registryAccess, boolean clientSide) {
+    private static WidgetGroup createTaskCard(int y, BlockPos pos, Holder<EcosystemTask> taskHolder, RegistryAccess registryAccess, boolean clientSide) {
+        EcosystemTask task = taskHolder.get();
+
         WidgetGroup taskGroup = new WidgetGroup(0, y, 152, 24);
         taskGroup.setBackground(new ResourceTexture("wasteland:textures/gui/task_card.png"));
 
@@ -119,13 +125,13 @@ public class EcostabilizerScreen {
                 .setColor(0x333333);
         taskGroup.addWidget(progressText);
 
-        if (clientSide) {
+        if (clientSide && taskHolder.unwrapKey().isPresent()) {
             ButtonWidget emiArea = new ButtonWidget(0, 0, 152, 24, IGuiTexture.EMPTY, clickData -> {
-                EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(task.getEntry());
+                EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(ModEmiPlugin.toRecipeId(taskHolder.unwrapKey().get().location()));
                 if (recipe != null) {
                     EmiApi.displayRecipe(recipe);
                 } else {
-                    Wasteland.LOGGER.warn("No recipe!");
+                    Wasteland.LOGGER.warn("No recipe! {}", taskHolder.unwrapKey().get().location());
                 }
             });
             emiArea.appendHoverTooltips(task.getTooltip());

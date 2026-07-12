@@ -11,13 +11,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 
-public record AnimalEcosystemTask(int goal, ResourceLocation entry, TagKey<EntityType<?>> animals, boolean optional) implements EcosystemTask {
+public record AnimalEcosystemTask(int goal, TagKey<EntityType<?>> animals, boolean optional) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "animal_task");
 
     public static final MapCodec<AnimalEcosystemTask> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(AnimalEcosystemTask::goal),
-                    ResourceLocation.CODEC.fieldOf("entry").forGetter(AnimalEcosystemTask::entry),
                     TagKey.codec(Registries.ENTITY_TYPE).fieldOf("animals").forGetter(AnimalEcosystemTask::animals),
                     Codec.BOOL.optionalFieldOf("optional", false).forGetter(AnimalEcosystemTask::optional)
             ).apply(instance, AnimalEcosystemTask::new)
@@ -41,11 +40,6 @@ public record AnimalEcosystemTask(int goal, ResourceLocation entry, TagKey<Entit
     @Override
     public double getProgress(BlockPos pos) {
         return 0;
-    }
-
-    @Override
-    public ResourceLocation getEntry() {
-        return entry;
     }
 
     @Override

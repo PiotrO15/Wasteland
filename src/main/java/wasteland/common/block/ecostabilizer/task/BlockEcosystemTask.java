@@ -8,16 +8,17 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 import wasteland.common.chunk.BlockGroup;
 import wasteland.common.chunk.ChunkEventSystem;
 
-public record BlockEcosystemTask(int goal, ResourceLocation entry, BlockGroup blockGroup, boolean optional) implements EcosystemTask {
+public record BlockEcosystemTask(int goal, BlockGroup blockGroup, boolean optional) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "block_task");
 
     public static final MapCodec<BlockEcosystemTask> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(BlockEcosystemTask::goal),
-                    ResourceLocation.CODEC.fieldOf("entry").forGetter(BlockEcosystemTask::entry),
                     BlockGroup.CODEC.fieldOf("block_group").forGetter(BlockEcosystemTask::blockGroup),
                     Codec.BOOL.optionalFieldOf("optional", false).forGetter(BlockEcosystemTask::optional)
             ).apply(instance, BlockEcosystemTask::new)
@@ -44,11 +45,6 @@ public record BlockEcosystemTask(int goal, ResourceLocation entry, BlockGroup bl
     }
 
     @Override
-    public ResourceLocation getEntry() {
-        return entry;
-    }
-
-    @Override
     public IGuiTexture getIcon(RegistryAccess registryAccess) {
         return new ItemStackTexture(blockGroup.asItems(registryAccess));
     }
@@ -56,5 +52,9 @@ public record BlockEcosystemTask(int goal, ResourceLocation entry, BlockGroup bl
     @Override
     public String[] getTooltip() {
         return new String[] {"Place at least " + getGoal() + " blocks of given types"};
+    }
+
+    public TagKey<Block> getTag() {
+        return blockGroup.getTag();
     }
 }

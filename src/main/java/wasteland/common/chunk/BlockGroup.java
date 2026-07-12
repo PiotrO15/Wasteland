@@ -12,7 +12,13 @@ import wasteland.common.ModTags;
 public enum BlockGroup {
     GRASSES(ModTags.Blocks.GRASSES),
     FLOWERS(ModTags.Blocks.FLOWERS),
-    FUNGI(ModTags.Blocks.FUNGI);
+    FUNGI(ModTags.Blocks.FUNGI),
+    TREES(ModTags.Blocks.TREES),
+    MOSS(ModTags.Blocks.MOSS),
+    TALL_FLOWERS(ModTags.Blocks.TALL_FLOWERS),
+    ARS_TREES(ModTags.Blocks.ARS_TREES),
+    TALL_GRASSES(ModTags.Blocks.TALL_GRASSES),
+    BERRIES(ModTags.Blocks.BERRIES);
 
     public static final BlockGroup[] VALUES = values();
 
@@ -39,5 +45,9 @@ public enum BlockGroup {
             items = blocks.get().stream().map(block -> block.get().asItem()).toArray(Item[]::new);
         }
         return items;
+    }
+
+    public TagKey<Block> getTag() {
+        return tag;
     }
 }

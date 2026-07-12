@@ -3,23 +3,22 @@ package wasteland.common.chunk;
 import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import wasteland.Wasteland;
+import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.task.BiomeEcosystemTask;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 public class ChunkEventSystem {
-    private final Map<Long, Set<BlockPos>> chunkToListeners = new HashMap<>();
-    private final Map<BlockPos, Set<Long>> listenerToChunks = new HashMap<>();
-
     private final Map<BlockPos, Map<BlockGroup, Integer>> ecostabilizerData =  new HashMap<>();
     private final Map<BlockPos, EnumMap<BiomeEcosystemTask.BiomeType, Integer>> biomeData = new HashMap<>();
     private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
+    private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
 
     private static final int SAMPLE_AREA = 16;
 
@@ -30,25 +29,29 @@ public class ChunkEventSystem {
         return instance;
     }
 
-    public void computeStats(BlockPos stabilizer, int chunkRadius, Level level) {
+    public void computeStats(BlockPos stabilizer, int radius, Level level) {
+        int chunkRadius = radius / 4;
         Map<BlockGroup, Integer> groups = new HashMap<>();
+
+        BlockPos quantized = quantize(stabilizer);
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
                 if (Math.sqrt(Math.pow(dx, 2) + Math.pow(dz, 2)) <= chunkRadius) {
-                    BlockPos newPos = new BlockPos(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
-                    VerdantChunk verdantChunk = level.getChunkAt(newPos)
+                    mutable.set(quantized.getX() + dx * 4, quantized.getY(), quantized.getZ() + dz * 4);
+                    VerdantChunk verdantChunk = level.getChunkAt(mutable)
                             .getCapability(Wasteland.VERDANT_CHUNK_CAPABILITY).resolve().orElse(null);
 
                     if (verdantChunk != null) {
                         for (BlockGroup blockGroup : BlockGroup.values()) {
-                            groups.put(blockGroup, groups.getOrDefault(blockGroup, 0) + verdantChunk.getLocalCount(newPos, blockGroup));
-                            Wasteland.LOGGER.warn("Adding {} {} for subchunk at {}", verdantChunk.getLocalCount(newPos, blockGroup), blockGroup, newPos);
+                            groups.put(blockGroup, groups.getOrDefault(blockGroup, 0) + verdantChunk.getLocalCount(mutable, blockGroup));
+//                            Wasteland.LOGGER.warn("Adding {} {} for subchunk at {}", verdantChunk.getLocalCount(mutable, blockGroup), blockGroup, mutable);
                         }
                     }
                 } else {
-                    BlockPos newPos = new BlockPos(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
-                    Wasteland.LOGGER.warn("Subchunk at pos {} is outside euclidean radius! {} {}", newPos, dx, dz);
+//                    mutable.set(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
+//                    Wasteland.LOGGER.warn("Subchunk at pos {} is outside euclidean radius! {} {}", mutable, dx, dz);
                 }
             }
         }
@@ -56,8 +59,11 @@ public class ChunkEventSystem {
         Wasteland.LOGGER.warn("Computed biodiversity");
     }
 
-    public void computeBiomeStats(BlockPos stabilizer, int chunkRadius, Level level, TagKey<Biome> tag) {
+    public void computeBiomeStats(BlockPos stabilizer, int radius, Level level, TagKey<Biome> tag) {
+        int chunkRadius = radius / 4;
         EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts = new EnumMap<>(BiomeEcosystemTask.BiomeType.class);
+
+        BlockPos quantized = quantize(stabilizer);
 
         for (BiomeEcosystemTask.BiomeType type : BiomeEcosystemTask.BiomeType.values()) {
             Set<String> allowedNamespaces = type.allowedNamespaces();
@@ -68,7 +74,7 @@ public class ChunkEventSystem {
             for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
                 for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
                     if (Math.sqrt(Math.pow(dx, 2) + Math.pow(dz, 2)) <= chunkRadius) {
-                        mutable.set(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
+                        mutable.set(quantized.getX() + dx * 4, quantized.getY(), quantized.getZ() + dz * 4);
 
                         Holder<Biome> biome = level.getBiome(mutable);
                         boolean namespaceMatches = biome.unwrapKey()
@@ -77,6 +83,7 @@ public class ChunkEventSystem {
 
                         if (biome.is(tag) && namespaceMatches) {
                             count++;
+//                            Wasteland.LOGGER.warn("Biome with type found: pos={} type={}", mutable, type);
                         }
                     }
                 }
@@ -87,63 +94,43 @@ public class ChunkEventSystem {
         biomeData.put(stabilizer, counts);
     }
 
-    public void registerListener(MBDMachine stabilizer, int chunkRadius) {
-        ChunkPos center = new ChunkPos(stabilizer.getPos());
-        Set<Long> keys = new HashSet<>();
-
-        for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
-            for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
-                long key = ChunkPos.asLong(center.x + dx, center.z + dz);
-                chunkToListeners.computeIfAbsent(key, k -> new HashSet<>()).add(stabilizer.getPos());
-                keys.add(key);
-            }
-        }
-
-        listenerToChunks.put(stabilizer.getPos(), keys);
+    public void registerListener(MBDMachine stabilizer, int radius) {
         machineData.put(stabilizer.getPos(), stabilizer);
+        machineRadius.put(stabilizer.getPos(), radius);
     }
 
     public void unregisterListener(BlockPos entity) {
-        Set<Long> keys = listenerToChunks.remove(entity);
-        if (keys == null) return;
-
-        for (long key : keys) {
-            Set<BlockPos> set = chunkToListeners.get(key);
-            if (set != null) {
-                set.remove(entity);
-                if (set.isEmpty()) chunkToListeners.remove(key);
-            }
-        }
         ecostabilizerData.remove(entity);
         machineData.remove(entity);
         biomeData.remove(entity);
+        machineRadius.remove(entity);
     }
 
     public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
-        notify(new ChunkPos(pos), entity -> {
+        notify(pos, entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
-            ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
 
     public void notifyDecrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
-        notify(new ChunkPos(pos), entity -> {
+        notify(pos, entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
-            ecostabilizerData.getOrDefault(entity, Map.of()).put(blockGroup, value);
+            ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
     }
 
-    private void notify(ChunkPos pos, Consumer<BlockPos> action) {
-        Set<BlockPos> listeners =
-                chunkToListeners.get(ChunkPos.asLong(pos.x, pos.z));
-        if (listeners == null) return;
-
-        // Snapshot to avoid issues if a listener modifies the set
-        new ArrayList<>(listeners).forEach(action);
+    public void notify(BlockPos pos, Consumer<BlockPos> action) {
+        for (BlockPos machinePos : new ArrayList<>(machineData.keySet())) {
+            Integer radius = machineRadius.get(machinePos);
+            if (radius != null && withinRadius(machinePos, pos, radius)) {
+                action.accept(machinePos);
+            }
+        }
     }
 
     public int getBiodiversity(BlockPos pos, BlockGroup blockGroup) {
@@ -155,5 +142,58 @@ public class ChunkEventSystem {
         EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts = biomeData.get(stabilizer);
         int samples = counts == null ? 0 : counts.getOrDefault(type, 0);
         return samples * SAMPLE_AREA;
+    }
+
+    public void notifyBiomeDelta(BlockPos pos, Holder<Biome> oldBiome, Holder<Biome> newBiome, Level level) {
+        notify(pos, machinePos -> {
+            MBDMachine machine = machineData.get(machinePos);
+            Integer radius = machineRadius.get(machinePos);
+            if (machine == null || radius == null) return;
+
+            if (!withinRadius(machinePos, pos, radius)) return;
+
+            Ecosystem ecosystem = EcostabilizerEvents.getEcosystem(machine);
+            if (ecosystem == null) return;
+            TagKey<Biome> tag = ecosystem.getAnchorTag();
+
+            for (BiomeEcosystemTask.BiomeType type : BiomeEcosystemTask.BiomeType.values()) {
+                boolean wasMatch = matches(oldBiome, tag, type);
+                boolean isMatch = matches(newBiome, tag, type);
+
+                if (wasMatch != isMatch) {
+//                    Wasteland.LOGGER.warn("Biome delta fired: pos={} type={} {}→{}", pos, type, wasMatch, isMatch);
+                    EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts =
+                            biomeData.computeIfAbsent(machinePos, k -> new EnumMap<>(BiomeEcosystemTask.BiomeType.class));
+                    counts.merge(type, isMatch ? 1 : -1, Integer::sum);
+                }
+            }
+        });
+    }
+
+    private static boolean matches(Holder<Biome> biome, TagKey<Biome> tag, BiomeEcosystemTask.BiomeType type) {
+        boolean namespaceMatches = biome.unwrapKey()
+                .map(key -> type.allowedNamespaces().contains(key.location().getNamespace()))
+                .orElse(false);
+        return biome.is(tag) && namespaceMatches;
+    }
+
+    private static boolean withinRadius(BlockPos centerPos, BlockPos pos, int radius) {
+        int quartRadius = asQuart(radius);
+        BlockPos origin = quantize(centerPos);
+        int dx = (pos.getX() - origin.getX()) / 4;
+        int dz = (pos.getZ() - origin.getZ()) / 4;
+        return dx * dx + dz * dz <= quartRadius * quartRadius;
+    }
+
+    private static BlockPos quantize(BlockPos pos) {
+        return new BlockPos(
+                QuartPos.toBlock(QuartPos.fromBlock(pos.getX())),
+                pos.getY(),
+                QuartPos.toBlock(QuartPos.fromBlock(pos.getZ()))
+        );
+    }
+
+    private static int asQuart(Integer radius) {
+        return  radius == null ? 0 : radius / 4;
     }
 }

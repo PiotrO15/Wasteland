@@ -8,6 +8,7 @@
     "AgriCraftFertilityPatch",
     "AgriHornHarvestablePatch",
     "AgriPlantAllowsClippingPatch",
+    "BlendBiomeResolverMixin",
     "EnchantedCauldronPatch",
     "EnchantedDistillingCategoryPatch",
     "LevelChunkMixin",

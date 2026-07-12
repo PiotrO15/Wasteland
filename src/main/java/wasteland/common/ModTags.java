@@ -13,6 +13,12 @@ public class ModTags {
         public static final TagKey<Block> GRASSES = tag("grasses");
         public static final TagKey<Block> FLOWERS = tag("flowers");
         public static final TagKey<Block> FUNGI = tag("fungi");
+        public static final TagKey<Block> TREES = tag("trees");
+        public static final TagKey<Block> MOSS = tag("moss");
+        public static final TagKey<Block> TALL_FLOWERS = tag("tall_flowers");
+        public static final TagKey<Block> ARS_TREES = tag("ars_trees");
+        public static final TagKey<Block> TALL_GRASSES = tag("tall_grasses");
+        public static final TagKey<Block> BERRIES = tag("berries");
 
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(new ResourceLocation(Wasteland.MOD_ID, name));
