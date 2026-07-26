@@ -17,9 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import piotro15.biomeblends.util.BlendBiomeResolver;
 import wasteland.common.chunk.ChunkEventSystem;
 
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 
 @Mixin(BlendBiomeResolver.class)
@@ -48,7 +46,6 @@ public class BlendBiomeResolverMixin {
     }
 
     private static BiomeResolver wrap(BiomeResolver original, ChunkAccess chunk, ServerLevel level) {
-        Set<Long> processedColumns = new HashSet<>();
         return (x, y, z, sampler) -> {
             Holder<Biome> oldBiome = chunk.getNoiseBiome(x, y, z);
             Holder<Biome> newBiome = original.getNoiseBiome(x, y, z, sampler);
@@ -57,12 +54,8 @@ public class BlendBiomeResolverMixin {
                 return newBiome;
 
             if (oldBiome != newBiome) {
-                long columnKey = ((long) x << 32) | (z & 0xffffffffL);
-
-                if (processedColumns.add(columnKey)) {
-                    BlockPos pos = new BlockPos(QuartPos.toBlock(x), QuartPos.toBlock(y), QuartPos.toBlock(z));
-                    ChunkEventSystem.getInstance().notifyBiomeDelta(pos, oldBiome, newBiome, level);
-                }
+                BlockPos pos = new BlockPos(QuartPos.toBlock(x), QuartPos.toBlock(y), QuartPos.toBlock(z));
+                ChunkEventSystem.getInstance().notifyBiomeDelta(pos, oldBiome, newBiome, level);
             }
 
             return newBiome;

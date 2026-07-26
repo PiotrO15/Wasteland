@@ -12,6 +12,7 @@ java {
 }
 
 minecraft {
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     mappings channel: 'official', version: '1.20.1'
 
     // Default run configurations.
