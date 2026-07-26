@@ -53,12 +53,15 @@ public class BlendBiomeResolverMixin {
             Holder<Biome> oldBiome = chunk.getNoiseBiome(x, y, z);
             Holder<Biome> newBiome = original.getNoiseBiome(x, y, z, sampler);
 
+            if (y != 79)
+                return newBiome;
+
             if (oldBiome != newBiome) {
                 long columnKey = ((long) x << 32) | (z & 0xffffffffL);
 
                 if (processedColumns.add(columnKey)) {
                     BlockPos pos = new BlockPos(QuartPos.toBlock(x), QuartPos.toBlock(y), QuartPos.toBlock(z));
-//                    ChunkEventSystem.getInstance().notifyBiomeDelta(pos, oldBiome, newBiome, level);
+                    ChunkEventSystem.getInstance().notifyBiomeDelta(pos, oldBiome, newBiome, level);
                 }
             }
 

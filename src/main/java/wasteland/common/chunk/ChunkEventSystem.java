@@ -60,10 +60,11 @@ public class ChunkEventSystem {
     }
 
     public void computeBiomeStats(BlockPos stabilizer, int radius, Level level, TagKey<Biome> tag) {
-        int chunkRadius = radius / 4;
+        int quartRadius = radius / 4;
         EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts = new EnumMap<>(BiomeEcosystemTask.BiomeType.class);
 
         BlockPos quantized = quantize(stabilizer);
+        int buildLimit = level.getMaxBuildHeight();
 
         for (BiomeEcosystemTask.BiomeType type : BiomeEcosystemTask.BiomeType.values()) {
             Set<String> allowedNamespaces = type.allowedNamespaces();
@@ -71,12 +72,14 @@ public class ChunkEventSystem {
 
             BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
-            for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
-                for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
-                    if (Math.sqrt(Math.pow(dx, 2) + Math.pow(dz, 2)) <= chunkRadius) {
-                        mutable.set(quantized.getX() + dx * 4, quantized.getY(), quantized.getZ() + dz * 4);
+            for (int dx = -quartRadius; dx <= quartRadius; dx++) {
+                for (int dz = -quartRadius; dz <= quartRadius; dz++) {
+                    if (dx * dx + dz * dz <= (quartRadius + 0.5) * (quartRadius + 0.5)) {
+                        mutable.set(quantized.getX() + dx * 4, buildLimit, quantized.getZ() + dz * 4);
 
-                        Holder<Biome> biome = level.getBiome(mutable);
+                        int qx = QuartPos.fromBlock(mutable.getX());
+                        int qz = QuartPos.fromBlock(mutable.getZ());
+                        Holder<Biome> biome = level.getNoiseBiome(qx, 79, qz);
                         boolean namespaceMatches = biome.unwrapKey()
                                 .map(key -> allowedNamespaces.contains(key.location().getNamespace()))
                                 .orElse(false);
@@ -170,6 +173,10 @@ public class ChunkEventSystem {
         });
     }
 
+    public Map<BlockPos, Integer> getMachineRadiusMap() {
+        return machineRadius;
+    }
+
     private static boolean matches(Holder<Biome> biome, TagKey<Biome> tag, BiomeEcosystemTask.BiomeType type) {
         boolean namespaceMatches = biome.unwrapKey()
                 .map(key -> type.allowedNamespaces().contains(key.location().getNamespace()))
@@ -178,14 +185,14 @@ public class ChunkEventSystem {
     }
 
     private static boolean withinRadius(BlockPos centerPos, BlockPos pos, int radius) {
-        int quartRadius = asQuart(radius);
         BlockPos origin = quantize(centerPos);
-        int dx = (pos.getX() - origin.getX()) / 4;
-        int dz = (pos.getZ() - origin.getZ()) / 4;
-        return dx * dx + dz * dz <= quartRadius * quartRadius;
+        BlockPos qPos = quantize(pos);
+        int dx = (qPos.getX() - origin.getX()) / 4;
+        int dz = (qPos.getZ() - origin.getZ()) / 4;
+        return dx * dx + dz * dz <= (asQuart(radius) + 0.5) * (asQuart(radius) + 0.5);
     }
 
-    private static BlockPos quantize(BlockPos pos) {
+    public static BlockPos quantize(BlockPos pos) {
         return new BlockPos(
                 QuartPos.toBlock(QuartPos.fromBlock(pos.getX())),
                 pos.getY(),
@@ -193,7 +200,7 @@ public class ChunkEventSystem {
         );
     }
 
-    private static int asQuart(Integer radius) {
+    public static int asQuart(Integer radius) {
         return  radius == null ? 0 : radius / 4;
     }
 }
