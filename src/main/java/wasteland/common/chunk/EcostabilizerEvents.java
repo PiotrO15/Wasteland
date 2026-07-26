@@ -2,27 +2,41 @@ package wasteland.common.chunk;
 
 import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import com.lowdragmc.mbd2.common.machine.definition.config.event.*;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.RegistryAccess;
+import com.lowdragmc.mbd2.common.trait.item.ItemSlotCapabilityTrait;
+import net.minecraft.core.*;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
+import wasteland.common.item.ModItems;
 import wasteland.common.registry.ModRegistries;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class EcostabilizerEvents {
     private static final ResourceLocation machineId = new ResourceLocation("wasteland", "ecostabilizer");
+    private static final ResourceLocation improvedMachineId = new ResourceLocation("wasteland", "improved_ecostabilizer");
 
     @SubscribeEvent
     public static void onFormed(MachineStructureFormedEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (!event.getMachine().getDefinition().id().equals(machineId))
+        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
             return;
 
         Ecosystem ecosystem = getOrCreateEcosystem(event.getMachine());
@@ -45,7 +59,7 @@ public class EcostabilizerEvents {
     @SubscribeEvent
     public static void onRemove(MachineRemovedEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (!event.getMachine().getDefinition().id().equals(machineId)) {
+        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId)) {
             return;
         }
 
@@ -59,14 +73,83 @@ public class EcostabilizerEvents {
         if (event.getMachine().getLevel().getRandom().nextInt(100) != 0)
             return;
 
-        if (!event.getMachine().getDefinition().id().equals(machineId))
+        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
             return;
 
-        int biodiversity = ChunkEventSystem.getInstance().getBiodiversity(event.getMachine().getPos(), BlockGroup.GRASSES);
+        int stage = getStage(event.getMachine());
 
-        if (biodiversity > 50) {
-//            Wasteland.LOGGER.warn("Ticking machine with id {}, biodiversity good", event.getMachine().getDefinition().id());
+        if (stage >= 1) {
+            var slot = event.getMachine().getTraitByName("essence_slot");
+            if (slot instanceof ItemSlotCapabilityTrait itemSlot) {
+                if (itemSlot.storage.getStackInSlot(0).is(ModItems.WEAK_ESSENCE.get())) {
+                    Wasteland.LOGGER.warn("Ticking machine with id {}, found weak essence", event.getMachine().getDefinition().id());
+
+                    applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), getRadius(event.getMachine())));
+
+                    itemSlot.storage.extractItem(0, 1, false);
+                }
+            }
         }
+    }
+
+    public static void applyResolver(ServerLevel level, BlockPos pos) {
+        BoundingBox boundingBox = new BoundingBox(pos.getX(), level.getMinBuildHeight(), pos.getZ(), pos.getX() + 3, level.getMaxBuildHeight(), pos.getZ() + 3);
+        List<ChunkAccess> chunks = new ArrayList<>();
+
+        for(int z = SectionPos.blockToSectionCoord(boundingBox.minZ()); z <= SectionPos.blockToSectionCoord(boundingBox.maxZ()); ++z) {
+            for(int x = SectionPos.blockToSectionCoord(boundingBox.minX()); x <= SectionPos.blockToSectionCoord(boundingBox.maxX()); ++x) {
+                ChunkAccess chunk = level.getChunk(x, z, ChunkStatus.FULL, false);
+                if (chunk != null) {
+                    chunks.add(chunk);
+                }
+            }
+        }
+
+        for(ChunkAccess chunk : chunks) {
+            BiFunction<ChunkAccess, BoundingBox, BiomeResolver> resolverFactory = (chunkAccess, box) -> makeEcostabilizerResolver(chunkAccess, box, level, "recovering", (h) -> true);
+            BiomeResolver resolver = resolverFactory.apply(chunk, boundingBox);
+            chunk.fillBiomesFromNoise(resolver, level.getChunkSource().randomState().sampler());
+            chunk.setUnsaved(true);
+        }
+
+        level.getChunkSource().chunkMap.resendBiomesForChunks(chunks);
+    }
+
+    public static BiomeResolver makeEcostabilizerResolver(ChunkAccess chunk, BoundingBox boundingBox, ServerLevel level, String targetNamespace, Predicate<Holder<Biome>> predicate) {
+        return (x, y, z, sampler) -> {
+            int quartX = QuartPos.toBlock(x);
+            int quartY = QuartPos.toBlock(y);
+            int quartZ = QuartPos.toBlock(z);
+            Holder<Biome> oldBiomeHolder = chunk.getNoiseBiome(x, y, z);
+
+            if (!boundingBox.isInside(quartX, quartY, quartZ)) {
+                return oldBiomeHolder;
+            }
+
+            ResourceLocation oldBiome = level.registryAccess().registryOrThrow(Registries.BIOME).getKey(oldBiomeHolder.value());
+            if (oldBiome == null) {
+                return oldBiomeHolder;
+            }
+
+            if (predicate.test(oldBiomeHolder)) {
+                level.sendParticles(ParticleTypes.SCRAPE, quartX + 2, quartY + 2, quartZ + 2, 8, 2.0F, 2.0F, 2.0F, 1.0F);
+                Optional<Holder.Reference<Biome>> newBiome = level.registryAccess().registryOrThrow(Registries.BIOME).getHolder(ResourceKey.create(Registries.BIOME, new ResourceLocation(targetNamespace, oldBiome.getPath())));
+                if (newBiome.isPresent()) {
+                    if (y != 79)
+                        return newBiome.get();
+
+                    if (oldBiomeHolder != newBiome.get()) {
+                        BlockPos pos = new BlockPos(QuartPos.toBlock(x), QuartPos.toBlock(y), QuartPos.toBlock(z));
+                        ChunkEventSystem.getInstance().notifyBiomeDelta(pos, oldBiomeHolder, newBiome.get(), level);
+                        Wasteland.LOGGER.warn("Changed biome at {}", pos);
+                    }
+
+                    return newBiome.get();
+                }
+            }
+
+            return oldBiomeHolder;
+        };
     }
 
     public static Ecosystem getEcosystem(MBDMachine machine) {
@@ -85,7 +168,6 @@ public class EcostabilizerEvents {
         if (ecosystemName.isEmpty()) {
             for (Ecosystem ecosystem : Ecosystem.values()) {
                 if (ecosystem.matches(machine.getLevel().getBiome(machine.getPos()))) {
-//                    machine.getCustomData().putString("ecosystem", ecosystem.getFriendlyName());
                     setCustomData(machine, compoundTag -> compoundTag.putString("ecosystem", ecosystem.getFriendlyName()));
                     return ecosystem;
                 }
@@ -99,7 +181,6 @@ public class EcostabilizerEvents {
 
     public static int getRadius(MBDMachine machine) {
         int radius = machine.getCustomData().getInt("radius");
-        Wasteland.LOGGER.warn("Getting radius for machine at {}, found: {}", machine.getPos(), radius);
 
         if (radius == 0) {
             radius = 24;
@@ -110,7 +191,6 @@ public class EcostabilizerEvents {
 
     public static int getStage(MBDMachine machine) {
         int stage = machine.getCustomData().getInt("transformation_stage");
-        Wasteland.LOGGER.warn("Getting stage for machine at {}, found: {}", machine.getPos(), stage);
 
         if (stage == 0) {
             stage = 1;
@@ -141,13 +221,11 @@ public class EcostabilizerEvents {
         };
 
         if (oldRadius < newRadius) {
-//            machine.getCustomData().putInt("radius", newRadius);
             int finalNewRadius = newRadius;
             setCustomData(machine, compoundTag -> compoundTag.putInt("radius", finalNewRadius));
         } else
             newRadius = oldRadius;
 
-//        machine.getCustomData().putInt("transformation_stage", stage);
         setCustomData(machine, compoundTag -> compoundTag.putInt("transformation_stage", stage));
         ChunkEventSystem.getInstance().registerListener(machine, newRadius);
         ChunkEventSystem.getInstance().computeStats(machine.getPos(), newRadius, machine.getLevel());

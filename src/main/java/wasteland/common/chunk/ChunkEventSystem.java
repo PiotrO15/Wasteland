@@ -15,12 +15,14 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class ChunkEventSystem {
+    private static final Map<Integer, List<int[]>> SPIRAL_CACHE = new HashMap<>();
+    private static final int SAMPLE_AREA = 16;
+
     private final Map<BlockPos, Map<BlockGroup, Integer>> ecostabilizerData =  new HashMap<>();
     private final Map<BlockPos, EnumMap<BiomeEcosystemTask.BiomeType, Integer>> biomeData = new HashMap<>();
     private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
     private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
-
-    private static final int SAMPLE_AREA = 16;
+    private static final Map<BlockPos, Integer> spiralProgress = new HashMap<>();
 
     private static ChunkEventSystem instance;
 
@@ -60,7 +62,7 @@ public class ChunkEventSystem {
     }
 
     public void computeBiomeStats(BlockPos stabilizer, int radius, Level level, TagKey<Biome> tag) {
-        int quartRadius = radius / 4;
+        int quartRadius = asQuart(radius);
         EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts = new EnumMap<>(BiomeEcosystemTask.BiomeType.class);
 
         BlockPos quantized = quantize(stabilizer);
@@ -107,6 +109,7 @@ public class ChunkEventSystem {
         machineData.remove(entity);
         biomeData.remove(entity);
         machineRadius.remove(entity);
+        spiralProgress.remove(entity);
     }
 
     public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
@@ -184,12 +187,28 @@ public class ChunkEventSystem {
         return biome.is(tag) && namespaceMatches;
     }
 
-    private static boolean withinRadius(BlockPos centerPos, BlockPos pos, int radius) {
+    public static boolean withinRadius(BlockPos centerPos, BlockPos pos, int radius) {
         BlockPos origin = quantize(centerPos);
         BlockPos qPos = quantize(pos);
         int dx = (qPos.getX() - origin.getX()) / 4;
         int dz = (qPos.getZ() - origin.getZ()) / 4;
         return dx * dx + dz * dz <= (asQuart(radius) + 0.5) * (asQuart(radius) + 0.5);
+    }
+
+    public static BlockPos getRandomPos(BlockPos centerPos, Level level, int radius) {
+        BlockPos origin = quantize(centerPos);
+
+        while (true) {
+            int dx = level.getRandom().nextIntBetweenInclusive(-radius, radius);
+            int dz = level.getRandom().nextIntBetweenInclusive(-radius, radius);
+
+            BlockPos random = quantize(new BlockPos(dx + origin.getX(), origin.getY(), dz + origin.getZ()));
+            if (withinRadius(random, centerPos, radius)) {
+                Wasteland.LOGGER.warn("Found random spot at {}", random);
+                return random;
+            }
+            Wasteland.LOGGER.warn("Failed random spot, not inside the radius {}, {}", radius, random);
+        }
     }
 
     public static BlockPos quantize(BlockPos pos) {
@@ -202,5 +221,42 @@ public class ChunkEventSystem {
 
     public static int asQuart(Integer radius) {
         return  radius == null ? 0 : radius / 4;
+    }
+
+    private static List<int[]> spiralOffsets(int quartRadius) {
+        return SPIRAL_CACHE.computeIfAbsent(quartRadius, r -> {
+            List<int[]> offsets = new ArrayList<>();
+            int x = 0, z = 0;
+            int dx = 0, dz = -1;
+            int side = r * 2 + 1;
+            int steps = side * side;
+
+            for (int i = 0; i < steps; i++) {
+                if (x * x + z * z <= (r + 0.5) * (r + 0.5)) {
+                    offsets.add(new int[]{x, z});
+                }
+                if (x == z || (x < 0 && x == -z) || (x > 0 && x == 1 - z)) {
+                    int temp = dx;
+                    dx = -dz;
+                    dz = temp;
+                }
+                x += dx;
+                z += dz;
+            }
+            return offsets;
+        });
+    }
+
+    public static BlockPos getNextSpiralPos(BlockPos centerPos, int radius) {
+        BlockPos origin = quantize(centerPos);
+        List<int[]> offsets = spiralOffsets(asQuart(radius));
+
+        int index = spiralProgress.getOrDefault(origin, 0);
+        if (index >= offsets.size()) index = 0;
+
+        int[] off = offsets.get(index);
+        spiralProgress.put(origin, index + 1);
+
+        return new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
     }
 }

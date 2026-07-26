@@ -26,11 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class EcostabilizerScreen {
     private static final ResourceLocation machineId = new ResourceLocation("wasteland", "ecostabilizer");
+    private static final ResourceLocation improvedMachineId = new ResourceLocation("wasteland", "improved_ecostabilizer");
 
     @SubscribeEvent
     public static void onUI(MachineUIEvent event) {
         MBDMachine machine = event.getMachine();
-        if (!machine.getDefinition().id().equals(machineId))
+        if (!machine.getDefinition().id().equals(machineId) && !machine.getDefinition().id().equals(improvedMachineId))
             return;
 
         Ecosystem ecosystemType = EcostabilizerEvents.getEcosystem(machine);
@@ -97,6 +98,13 @@ public class EcostabilizerScreen {
 
             int selectedTab = Math.min(transformationStage, stageWidgets.size());
             tabs.switchTag(tabs.tabs.get(stageWidgets.get(selectedTab - 1)));
+
+            if (machine.getDefinition().id().equals(machineId)) {
+                event.getRoot().addWidget(new ImageWidget(150, -28, 26, 32, () -> new ResourceTexture("wasteland:textures/gui/locked.png")));
+
+                TabButton tabButton = (TabButton) tabs.getFirstWidgetById("automation");
+                tabButton.setOnPressCallback((clickData, aBoolean) -> tabButton.setPressed(false));
+            }
         }
 
         event.getRoot().addWidget(new ImageWidget(-20, 37, 16, 16, () -> new ResourceTexture("wasteland:textures/gui/" + ecosystemType.getFriendlyName() + "_ecosystem.png")));

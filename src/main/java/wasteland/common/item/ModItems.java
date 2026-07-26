@@ -18,6 +18,8 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Wasteland.MOD_ID);
 
     public static final RegistryObject<Item> COMPOST = ITEMS.register("compost", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WEAK_ESSENCE = ITEMS.register("weak_essence", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> VERDANT_ESSENCE = ITEMS.register("verdant_essence", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BIODIVERSITY_SCANNER = ITEMS.register("biodiversity_scanner", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> TERRAFORMING_DRONE = ITEMS.register("terraforming_drone", () -> new DroneItem(TerraformingDroneEntity::new, false, DyeColor.LIME));
 
@@ -29,6 +31,8 @@ public class ModItems {
     public static void buildContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(COMPOST);
+            event.accept(WEAK_ESSENCE);
+            event.accept(VERDANT_ESSENCE);
         }
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(BIODIVERSITY_SCANNER);
