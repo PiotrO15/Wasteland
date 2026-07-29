@@ -132,8 +132,8 @@ public class ChunkEventSystem {
                             if (AnimalGroupRegistry.matches(type, mob)) {
                                 counts.put(type, counts.getOrDefault(type, 0) + 1);
                             }
-                            seen.add(mob.getUUID());
                         }
+                        seen.add(mob.getUUID());
                     }
                 }
             }
@@ -308,5 +308,32 @@ public class ChunkEventSystem {
         spiralProgress.put(origin, index + 1);
 
         return new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
+    }
+
+    public void notifyMobEnter(BlockPos stabilizer, Mob mob) {
+        updateMobCount(stabilizer, mob, 1);
+    }
+
+    public void notifyMobExit(BlockPos stabilizer, Mob mob) {
+        updateMobCount(stabilizer, mob, -1);
+    }
+
+    private void updateMobCount(BlockPos stabilizer, Mob mob, int amount) {
+        MBDMachine machine = machineData.get(stabilizer);
+
+        boolean changed = false;
+
+        for (TagKey<EntityType<?>> type : AnimalGroupRegistry.values()) {
+            if (AnimalGroupRegistry.matches(type, mob)) {
+                int value = animalData.getOrDefault(stabilizer, Map.of()).getOrDefault(type, 0) + amount;
+                animalData.getOrDefault(stabilizer, new HashMap<>()).put(type, value);
+                Wasteland.LOGGER.warn("Mob {} at {} changed group {} for block at {}, delta {}, new value {}", mob.getType(), mob.blockPosition(), type.location(), stabilizer, amount, value);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            EcostabilizerEvents.recalculateStages(stabilizer, machine, mob.level().registryAccess());
+        }
     }
 }

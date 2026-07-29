@@ -15,6 +15,7 @@ import wasteland.common.registry.ModRegistries;
 @EmiEntrypoint
 public class ModEmiPlugin implements EmiPlugin {
     public static final EmiStack ECOSTABILIZER = EmiStack.of(ForgeRegistries.ITEMS.getValue(new ResourceLocation(Wasteland.MOD_ID, "ecostabilizer")));
+    public static final EmiStack IMPROVED_ECOSTABILIZER = EmiStack.of(ForgeRegistries.ITEMS.getValue(new ResourceLocation(Wasteland.MOD_ID, "improved_ecostabilizer")));
     public static final EmiRecipeCategory ECOSYSTEM_TASK_CATEGORY
             = new EmiRecipeCategory(new ResourceLocation(Wasteland.MOD_ID, "ecosystem_task"), ECOSTABILIZER);
 
@@ -22,6 +23,7 @@ public class ModEmiPlugin implements EmiPlugin {
     public void register(EmiRegistry registry) {
         registry.addCategory(ECOSYSTEM_TASK_CATEGORY);
         registry.addWorkstation(ECOSYSTEM_TASK_CATEGORY, ECOSTABILIZER);
+        registry.addWorkstation(ECOSYSTEM_TASK_CATEGORY, IMPROVED_ECOSTABILIZER);
 
         RegistryAccess registryAccess = Minecraft.getInstance().level != null
                 ? Minecraft.getInstance().level.registryAccess()

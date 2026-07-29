@@ -89,6 +89,25 @@ public class EcostabilizerEvents {
     }
 
     @SubscribeEvent
+    public static void beforeRecipe(MachineBeforeRecipeWorkingEvent event) {
+        if (event.getMachine().getLevel().isClientSide()) return;
+        if (!event.getMachine().getDefinition().id().equals(improvedMachineId)) return;
+
+        int stage = getStage(event.getMachine());
+
+        switch (event.getRecipe().getId().toString()) {
+            case "wasteland:weak_essence":
+                if (stage < 2)
+                    event.setCanceled(true);
+                break;
+            case "wasteland:verdant_essence":
+                if (stage < 4)
+                    event.setCanceled(true);
+                break;
+        }
+    }
+
+    @SubscribeEvent
     public static void onRecipeFinish(MachineOnRecipeFinishEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
         if (!event.getMachine().getDefinition().id().equals(improvedMachineId)) return;

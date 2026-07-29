@@ -4,6 +4,8 @@ import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ProgressTexture;
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture;
 import com.lowdragmc.lowdraglib.gui.widget.*;
+import com.lowdragmc.mbd2.api.recipe.ingredient.EntityIngredient;
+import com.lowdragmc.mbd2.common.gui.recipe.ingredient.entity.EntityPreviewWidget;
 import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import com.lowdragmc.mbd2.common.machine.definition.config.event.MachineUIEvent;
 import dev.emi.emi.api.EmiApi;
@@ -18,6 +20,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
+import wasteland.common.block.ecostabilizer.task.AnimalEcosystemTask;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.chunk.EcostabilizerEvents;
 import wasteland.common.registry.ModRegistries;
@@ -156,7 +159,10 @@ public class EcostabilizerScreen {
         taskProgress.setProgressTexture(new ProgressTexture(new ResourceTexture("wasteland:textures/gui/small_bar_empty.png"), new ResourceTexture("wasteland:textures/gui/small_bar_filled.png")));
         taskGroup.addWidget(taskProgress);
 
-        taskGroup.addWidget(new ImageWidget(3, 3, 16, 16, task.getIcon(registryAccess)));
+        if (task instanceof AnimalEcosystemTask animalEcosystemTask)
+            taskGroup.addWidget(new EntityPreviewWidget(EntityIngredient.of(animalEcosystemTask.animalGroup(), 1), 3, 3, 16, 16).setShowAmount(false).setDrawHoverOverlay(false));
+        else
+            taskGroup.addWidget(new ImageWidget(3, 3, 16, 16, task.getIcon(registryAccess)));
 
         TextTextureWidget progressText = new TextTextureWidget(23, 6, 125, 10,
                 task.getProgressValue(pos) + "/" + task.getGoal());
