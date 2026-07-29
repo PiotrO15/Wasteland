@@ -11,7 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
-import wasteland.common.chunk.BlockGroupRegistry;
+import wasteland.common.registry.BlockGroupRegistry;
 import wasteland.common.chunk.ChunkEventSystem;
 
 public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean optional) implements EcosystemTask {

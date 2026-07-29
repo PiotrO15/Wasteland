@@ -53,6 +53,7 @@ public class EcostabilizerEvents {
         ChunkEventSystem.getInstance().registerListener(event.getMachine(), radius);
         ChunkEventSystem.getInstance().computeStats(event.getMachine().getPos(), radius, event.getMachine().getLevel());
         ChunkEventSystem.getInstance().computeBiomeStats(event.getMachine().getPos(), radius, event.getMachine().getLevel(), ecosystem.getAnchorTag());
+        ChunkEventSystem.getInstance().computeAnimalStats(event.getMachine().getPos(), radius, event.getMachine().getLevel());
 
         recalculateStages(event.getMachine().getPos(), event.getMachine(), event.getMachine().getLevel().registryAccess());
 
@@ -243,6 +244,7 @@ public class EcostabilizerEvents {
         ChunkEventSystem.getInstance().registerListener(machine, newRadius);
         ChunkEventSystem.getInstance().computeStats(machine.getPos(), newRadius, machine.getLevel());
         ChunkEventSystem.getInstance().computeBiomeStats(machine.getPos(), newRadius, machine.getLevel(), ecosystem.getAnchorTag());
+        ChunkEventSystem.getInstance().computeAnimalStats(machine.getPos(), newRadius, machine.getLevel());
     }
 
     public static void recalculateStages(BlockPos pos, MBDMachine machine, RegistryAccess registryAccess) {

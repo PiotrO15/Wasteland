@@ -5,12 +5,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.AABB;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.task.BiomeEcosystemTask;
+import wasteland.common.registry.AnimalGroupRegistry;
+import wasteland.common.registry.BlockGroupRegistry;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -19,10 +24,11 @@ public class ChunkEventSystem {
     private static final Map<Integer, List<int[]>> SPIRAL_CACHE = new HashMap<>();
     private static final int SAMPLE_AREA = 16;
 
-    private final Map<BlockPos, Map<TagKey<Block>, Integer>> ecostabilizerData =  new HashMap<>();
+    private final Map<BlockPos, Map<TagKey<Block>, Integer>> blockData =  new HashMap<>();
     private final Map<BlockPos, EnumMap<BiomeEcosystemTask.BiomeType, Integer>> biomeData = new HashMap<>();
     private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
     private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
+    private final Map<BlockPos, Map<TagKey<EntityType<?>>, Integer>> animalData = new HashMap<>();
     private static final Map<BlockPos, Integer> spiralProgress = new HashMap<>();
 
     private static ChunkEventSystem instance;
@@ -58,7 +64,7 @@ public class ChunkEventSystem {
                 }
             }
         }
-        ecostabilizerData.put(stabilizer, groups);
+        blockData.put(stabilizer, groups);
         Wasteland.LOGGER.warn("Computed biodiversity");
     }
 
@@ -100,13 +106,50 @@ public class ChunkEventSystem {
         biomeData.put(stabilizer, counts);
     }
 
+    public void computeAnimalStats(BlockPos stabilizer, int radius, Level level) {
+        Map<TagKey<EntityType<?>>, Integer> counts = new HashMap<>();
+
+        int quartRadius = asQuart(radius);
+        BlockPos quantized = quantize(stabilizer);
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+
+        int minBuildHeight = level.getMinBuildHeight();
+        int maxBuildHeight = level.getMaxBuildHeight();
+
+        Set<UUID> seen = new HashSet<>();
+
+        for (int dx = -quartRadius; dx <= quartRadius; dx++) {
+            for (int dz = -quartRadius; dz <= quartRadius; dz++) {
+                if (dx * dx + dz * dz <= (quartRadius + 0.5) * (quartRadius + 0.5)) {
+                    mutable.set(quantized.getX() + dx * 4, maxBuildHeight, quantized.getZ() + dz * 4);
+
+                    AABB box = new AABB(mutable.getX(), minBuildHeight, mutable.getZ(), mutable.getX() + 4, maxBuildHeight, mutable.getZ() + 4);
+                    List<Mob> mobs = level.getEntitiesOfClass(Mob.class, box,
+                            mob -> withinRadius(stabilizer, mob.blockPosition(), radius) && !seen.contains(mob.getUUID()));
+
+                    for (Mob mob : mobs) {
+                        for (TagKey<EntityType<?>> type : AnimalGroupRegistry.values()) {
+                            if (AnimalGroupRegistry.matches(type, mob)) {
+                                counts.put(type, counts.getOrDefault(type, 0) + 1);
+                            }
+                            seen.add(mob.getUUID());
+                        }
+                    }
+                }
+            }
+        }
+
+        animalData.put(stabilizer, counts);
+        counts.forEach((type, count) -> Wasteland.LOGGER.warn("Computed mob stats at {}: {} of {}", stabilizer, count, type));
+    }
+
     public void registerListener(MBDMachine stabilizer, int radius) {
         machineData.put(stabilizer.getPos(), stabilizer);
         machineRadius.put(stabilizer.getPos(), radius);
     }
 
     public void unregisterListener(BlockPos entity) {
-        ecostabilizerData.remove(entity);
+        blockData.remove(entity);
         machineData.remove(entity);
         biomeData.remove(entity);
         machineRadius.remove(entity);
@@ -115,8 +158,8 @@ public class ChunkEventSystem {
 
     public void notifyIncrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {
         notify(pos, entity -> {
-            int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
-            ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
+            int value = blockData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
+            blockData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
@@ -124,8 +167,8 @@ public class ChunkEventSystem {
 
     public void notifyDecrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {
         notify(pos, entity -> {
-            int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
-            ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
+            int value = blockData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
+            blockData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
             Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
         });
@@ -141,8 +184,13 @@ public class ChunkEventSystem {
     }
 
     public int getBiodiversity(BlockPos pos, TagKey<Block> blockGroup) {
-        Map<TagKey<Block>, Integer> counts = ecostabilizerData.get(pos);
+        Map<TagKey<Block>, Integer> counts = blockData.get(pos);
         return counts == null ? 0 : counts.getOrDefault(blockGroup, 0);
+    }
+
+    public int getAnimalCount(BlockPos pos, TagKey<EntityType<?>> type) {
+        Map<TagKey<EntityType<?>>, Integer> counts = animalData.get(pos);
+        return counts == null ? 0 : counts.getOrDefault(type, 0);
     }
 
     public int getBiomeCount(BlockPos stabilizer, BiomeEcosystemTask.BiomeType type) {
@@ -172,6 +220,7 @@ public class ChunkEventSystem {
                     EnumMap<BiomeEcosystemTask.BiomeType, Integer> counts =
                             biomeData.computeIfAbsent(machinePos, k -> new EnumMap<>(BiomeEcosystemTask.BiomeType.class));
                     counts.merge(type, isMatch ? 1 : -1, Integer::sum);
+                    EcostabilizerEvents.recalculateStages(machinePos, machineData.get(machinePos), level.registryAccess());
                 }
             }
         });

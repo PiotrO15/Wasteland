@@ -1,4 +1,4 @@
-package wasteland.common.chunk;
+package wasteland.common.registry;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;

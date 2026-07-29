@@ -12,6 +12,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.util.INBTSerializable;
 import wasteland.Wasteland;
+import wasteland.common.registry.BlockGroupRegistry;
 
 import java.util.*;
 
