@@ -7,19 +7,24 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
-import wasteland.common.chunk.BlockGroup;
+import wasteland.common.chunk.BlockGroupRegistry;
 import wasteland.common.chunk.ChunkEventSystem;
 
-public record BlockEcosystemTask(int goal, BlockGroup blockGroup, boolean optional) implements EcosystemTask {
+public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean optional) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "block_task");
+
+    public BlockEcosystemTask {
+        BlockGroupRegistry.register(blockGroup);
+    }
 
     public static final MapCodec<BlockEcosystemTask> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(BlockEcosystemTask::goal),
-                    BlockGroup.CODEC.fieldOf("block_group").forGetter(BlockEcosystemTask::blockGroup),
+                    TagKey.codec(Registries.BLOCK).fieldOf("block_group").forGetter(BlockEcosystemTask::blockGroup),
                     Codec.BOOL.optionalFieldOf("optional", false).forGetter(BlockEcosystemTask::optional)
             ).apply(instance, BlockEcosystemTask::new)
     );
@@ -46,7 +51,7 @@ public record BlockEcosystemTask(int goal, BlockGroup blockGroup, boolean option
 
     @Override
     public IGuiTexture getIcon(RegistryAccess registryAccess) {
-        return new ItemStackTexture(blockGroup.asItems(registryAccess));
+        return new ItemStackTexture(BlockGroupRegistry.asItems(blockGroup, registryAccess));
     }
 
     @Override
@@ -55,6 +60,6 @@ public record BlockEcosystemTask(int goal, BlockGroup blockGroup, boolean option
     }
 
     public TagKey<Block> getTag() {
-        return blockGroup.getTag();
+        return blockGroup;
     }
 }

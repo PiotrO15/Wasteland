@@ -14,7 +14,7 @@ public class VerdantChunkEvents {
         if (!(event.getChunk() instanceof LevelChunk levelChunk)) return;
 
         levelChunk.getCapability(Wasteland.VERDANT_CHUNK_CAPABILITY).ifPresent(cap -> {
-            if (!cap.isScanned()) {
+            if (cap.scannedHash() != VerdantChunk.CURRENT_SCAN_HASH_INDEX) {
                 cap.scanChunk();
             }
         });

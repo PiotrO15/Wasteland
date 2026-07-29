@@ -7,6 +7,7 @@ import net.minecraft.core.QuartPos;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.task.BiomeEcosystemTask;
@@ -18,7 +19,7 @@ public class ChunkEventSystem {
     private static final Map<Integer, List<int[]>> SPIRAL_CACHE = new HashMap<>();
     private static final int SAMPLE_AREA = 16;
 
-    private final Map<BlockPos, Map<BlockGroup, Integer>> ecostabilizerData =  new HashMap<>();
+    private final Map<BlockPos, Map<TagKey<Block>, Integer>> ecostabilizerData =  new HashMap<>();
     private final Map<BlockPos, EnumMap<BiomeEcosystemTask.BiomeType, Integer>> biomeData = new HashMap<>();
     private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
     private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
@@ -33,7 +34,7 @@ public class ChunkEventSystem {
 
     public void computeStats(BlockPos stabilizer, int radius, Level level) {
         int chunkRadius = radius / 4;
-        Map<BlockGroup, Integer> groups = new HashMap<>();
+        Map<TagKey<Block>, Integer> groups = new HashMap<>();
 
         BlockPos quantized = quantize(stabilizer);
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
@@ -46,7 +47,7 @@ public class ChunkEventSystem {
                             .getCapability(Wasteland.VERDANT_CHUNK_CAPABILITY).resolve().orElse(null);
 
                     if (verdantChunk != null) {
-                        for (BlockGroup blockGroup : BlockGroup.values()) {
+                        for (TagKey<Block> blockGroup : BlockGroupRegistry.values()) {
                             groups.put(blockGroup, groups.getOrDefault(blockGroup, 0) + verdantChunk.getLocalCount(mutable, blockGroup));
 //                            Wasteland.LOGGER.warn("Adding {} {} for subchunk at {}", verdantChunk.getLocalCount(mutable, blockGroup), blockGroup, mutable);
                         }
@@ -112,7 +113,7 @@ public class ChunkEventSystem {
         spiralProgress.remove(entity);
     }
 
-    public void notifyIncrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
+    public void notifyIncrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {
         notify(pos, entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
             ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
@@ -121,7 +122,7 @@ public class ChunkEventSystem {
         });
     }
 
-    public void notifyDecrease(BlockPos pos, BlockGroup blockGroup, int amount, Level level) {
+    public void notifyDecrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {
         notify(pos, entity -> {
             int value = ecostabilizerData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
             ecostabilizerData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
@@ -139,8 +140,8 @@ public class ChunkEventSystem {
         }
     }
 
-    public int getBiodiversity(BlockPos pos, BlockGroup blockGroup) {
-        Map<BlockGroup, Integer> counts = ecostabilizerData.get(pos);
+    public int getBiodiversity(BlockPos pos, TagKey<Block> blockGroup) {
+        Map<TagKey<Block>, Integer> counts = ecostabilizerData.get(pos);
         return counts == null ? 0 : counts.getOrDefault(blockGroup, 0);
     }
 

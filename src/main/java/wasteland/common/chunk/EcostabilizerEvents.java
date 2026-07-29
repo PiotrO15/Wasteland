@@ -83,7 +83,7 @@ public class EcostabilizerEvents {
 
         if (stage > 1) {
             Wasteland.LOGGER.warn("Trying to spawn an animal!");
-            spawnFromCachedList((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getRandomPos(event.getMachine().getPos(), event.getMachine().getLevel(), getRadius(event.getMachine())), List.of(EntityType.PIG, EntityType.COW), MobCategory.CREATURE);
+            spawnFromCachedList((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getRandomPos(event.getMachine().getPos(), event.getMachine().getLevel(), getRadius(event.getMachine())), List.of(EntityType.PIG, EntityType.COW));
         }
     }
 
@@ -283,7 +283,8 @@ public class EcostabilizerEvents {
         machine.setCustomData(copy);
     }
 
-    public static void spawnFromCachedList(ServerLevel level, BlockPos pos, List<EntityType<?>> cachedSpawnList, MobCategory category) {
+    public static void spawnFromCachedList(ServerLevel level, BlockPos pos, List<EntityType<?>> cachedSpawnList) {
+        MobCategory category = MobCategory.CREATURE;
         NaturalSpawner.SpawnState spawnState = level.getChunkSource().getLastSpawnState();
         if (spawnState == null || !spawnState.canSpawnForCategory(category, new ChunkPos(pos))) return;
 

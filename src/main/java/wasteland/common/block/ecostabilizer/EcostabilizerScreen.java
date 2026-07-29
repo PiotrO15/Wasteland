@@ -8,10 +8,12 @@ import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import com.lowdragmc.mbd2.common.machine.definition.config.event.MachineUIEvent;
 import dev.emi.emi.api.EmiApi;
 import dev.emi.emi.api.recipe.EmiRecipe;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,12 +23,33 @@ import wasteland.common.chunk.EcostabilizerEvents;
 import wasteland.common.registry.ModRegistries;
 import wasteland.compat.ModEmiPlugin;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class EcostabilizerScreen {
     private static final ResourceLocation machineId = new ResourceLocation("wasteland", "ecostabilizer");
     private static final ResourceLocation improvedMachineId = new ResourceLocation("wasteland", "improved_ecostabilizer");
+
+    private static final String[][] progressTooltips = {
+            {
+                "gui.ecostabilizer.rewards.radius.1",
+                "gui.ecostabilizer.rewards.automation"
+            },
+            {
+                "gui.ecostabilizer.rewards.radius.2",
+                "gui.ecostabilizer.rewards.animals.ecosystem.1"
+            },
+            {
+                "gui.ecostabilizer.rewards.radius.3",
+                "gui.ecostabilizer.rewards.animals.ecosystem.2"
+            },
+            {
+                "gui.ecostabilizer.rewards.radius.4",
+                "gui.ecostabilizer.rewards.animals.ecosystem.3"
+            }
+    };
 
     @SubscribeEvent
     public static void onUI(MachineUIEvent event) {
@@ -94,6 +117,15 @@ public class EcostabilizerScreen {
                     }
                     return total / values.size();
                 });
+
+                List<Component> rewardLines = Stream.concat(
+                        Stream.of(Component.translatable("gui.ecostabilizer.rewards").withStyle(ChatFormatting.YELLOW)),
+                        Arrays.stream(progressTooltips[currentStage - 1])
+                                .map(s -> (Component) Component.literal("⏵ ").withStyle(ChatFormatting.GOLD)
+                                        .append(Component.translatable(s.replace("ecosystem", ecosystemType.getFriendlyName()))
+                                                .withStyle(ChatFormatting.WHITE)))
+                ).toList();
+                stageProgress.appendHoverTooltips(rewardLines);
             });
 
             int selectedTab = Math.min(transformationStage, stageWidgets.size());

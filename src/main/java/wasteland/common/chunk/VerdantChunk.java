@@ -4,7 +4,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
@@ -19,9 +21,10 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
 
     private final LevelChunk chunk;
 
-    private final Map<Integer, EnumMap<BlockGroup, Integer>> data = new HashMap<>();
+    private final Map<Integer, Map<TagKey<Block>, Integer>> data = new HashMap<>();
 
-    private boolean scanned = false;
+    public static final int CURRENT_SCAN_HASH_INDEX = 1;
+    private int scannedHash = CURRENT_SCAN_HASH_INDEX;
 
     public VerdantChunk(LevelChunk chunk) {
         this.chunk = chunk;
@@ -33,22 +36,22 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
         return sz * SUBCHUNK_SIZE + sx;
     }
 
-    public void increment(BlockPos pos, BlockGroup group) {
+    public void increment(BlockPos pos, TagKey<Block> group) {
         if (chunk.getLevel().isClientSide())
             return;
 
-        data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
+        data.computeIfAbsent(subchunkIndex(pos), k -> new HashMap<>())
                 .merge(group, 1, Integer::sum);
         ChunkEventSystem.getInstance().notifyIncrease(pos, group, 1, chunk.getLevel());
         chunk.setUnsaved(true);
     }
 
-    public void decrement(BlockPos pos, BlockGroup group) {
+    public void decrement(BlockPos pos, TagKey<Block> group) {
         if (chunk.getLevel().isClientSide())
             return;
 
         int idx = subchunkIndex(pos);
-        EnumMap<BlockGroup, Integer> subchunk = data.get(idx);
+        Map<TagKey<Block>, Integer> subchunk = data.get(idx);
         if (subchunk == null) return;
 
         subchunk.compute(group, (k, v) -> (v == null || v <= 1) ? null : v - 1);
@@ -58,25 +61,25 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
         chunk.setUnsaved(true);
     }
 
-    public int getLocalCount(BlockPos pos, BlockGroup group) {
-        EnumMap<BlockGroup, Integer> subchunk = data.get(subchunkIndex(pos));
+    public int getLocalCount(BlockPos pos, TagKey<Block> group) {
+        Map<TagKey<Block>, Integer> subchunk = data.get(subchunkIndex(pos));
         return subchunk == null ? 0 : subchunk.getOrDefault(group, 0);
     }
 
     public void notifyChange(BlockPos pos, BlockState oldState, BlockState newState) {
         if (oldState.getBlock() != newState.getBlock()) {
-            for (BlockGroup group : BlockGroup.values()) {
-                if (group.matches(oldState))
+            for (TagKey<Block> group : BlockGroupRegistry.values()) {
+                if (BlockGroupRegistry.matches(group, oldState))
                     decrement(pos, group);
-                if (group.matches(newState))
+                if (BlockGroupRegistry.matches(group, newState))
                     increment(pos, group);
             }
         }
     }
 
-    public int getTotalCount(BlockGroup group) {
+    public int getTotalCount(TagKey<Block> group) {
         int total = 0;
-        for (EnumMap<BlockGroup, Integer> subchunk : data.values()) {
+        for (Map<TagKey<Block>, Integer> subchunk : data.values()) {
             Integer count = subchunk.get(group);
             if (count != null) total += count;
         }
@@ -86,15 +89,15 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag root = new CompoundTag();
-        root.putBoolean("scanned", scanned);
+        root.putInt("scannedHash", scannedHash);
 
         ListTag subchunkList = new ListTag();
-        for (Map.Entry<Integer, EnumMap<BlockGroup, Integer>> entry : data.entrySet()) {
+        for (Map.Entry<Integer, Map<TagKey<Block>, Integer>> entry : data.entrySet()) {
             CompoundTag subchunkTag = new CompoundTag();
             subchunkTag.putInt("idx", entry.getKey());
 
             CompoundTag groupsTag = new CompoundTag();
-            entry.getValue().forEach((group, count) -> groupsTag.putInt(group.name(), count));
+            entry.getValue().forEach((group, count) -> groupsTag.putInt(group.location().toString(), count));
 
             subchunkTag.put("groups", groupsTag);
             subchunkList.add(subchunkTag);
@@ -107,7 +110,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         data.clear();
-        scanned = nbt.getBoolean("scanned");
+        scannedHash = nbt.getInt("scannedHash");
 
         ListTag subchunkList = nbt.getList("subchunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < subchunkList.size(); i++) {
@@ -115,11 +118,11 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
             int idx = subchunkTag.getInt("idx");
 
             CompoundTag groupsTag = subchunkTag.getCompound("groups");
-            EnumMap<BlockGroup, Integer> groups = new EnumMap<>(BlockGroup.class);
+            Map<TagKey<Block>, Integer> groups = new HashMap<>();
 
-            for (BlockGroup group : BlockGroup.VALUES) {
-                if (groupsTag.contains(group.name())) {
-                    groups.put(group, groupsTag.getInt(group.name()));
+            for (TagKey<Block> group : BlockGroupRegistry.values()) {
+                if (groupsTag.contains(group.location().toString())) {
+                    groups.put(group, groupsTag.getInt(group.location().toString()));
                 }
             }
 
@@ -135,17 +138,17 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
                 ));
     }
 
-    public boolean isScanned() {
-        return scanned;
+    public int scannedHash() {
+        return scannedHash;
     }
 
-    private void addSilent(BlockPos pos, BlockGroup group) {
-        data.computeIfAbsent(subchunkIndex(pos), k -> new EnumMap<>(BlockGroup.class))
+    private void addSilent(BlockPos pos, TagKey<Block> group) {
+        data.computeIfAbsent(subchunkIndex(pos), k -> new HashMap<>())
                 .merge(group, 1, Integer::sum);
     }
 
     public void scanChunk() {
-        if (scanned) return;
+        if (scannedHash == CURRENT_SCAN_HASH_INDEX) return;
         if (chunk.getLevel().isClientSide()) return;
 
         data.clear();
@@ -163,8 +166,8 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
                     mutable.set(baseX + x, y, baseZ + z);
                     BlockState state = chunk.getBlockState(mutable);
 
-                    for (BlockGroup group : BlockGroup.VALUES) {
-                        if (group.matches(state)) {
+                    for (TagKey<Block> group : BlockGroupRegistry.values()) {
+                        if (BlockGroupRegistry.matches(group, state)) {
                             addSilent(mutable, group);
                         }
                     }
@@ -172,7 +175,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
             }
         }
 
-        scanned = true;
+        scannedHash = CURRENT_SCAN_HASH_INDEX;
         chunk.setUnsaved(true);
     }
 }
