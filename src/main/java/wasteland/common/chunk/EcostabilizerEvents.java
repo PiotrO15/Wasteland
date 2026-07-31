@@ -74,7 +74,7 @@ public class EcostabilizerEvents {
     @SubscribeEvent
     public static void onTick(MachineTickEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (event.getMachine().getLevel().getRandom().nextInt(10) != 0)
+        if (event.getMachine().getLevel().getRandom().nextInt(50) != 0)
             return;
 
         if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
@@ -334,7 +334,6 @@ public class EcostabilizerEvents {
 
         if (!NaturalSpawner.isSpawnPositionOk(
                 SpawnPlacements.getPlacementType(type), level, trySpawnPos, type)) {
-            Wasteland.LOGGER.warn("Spawn position at {} is not Ok", trySpawnPos);
             return;
         }
 

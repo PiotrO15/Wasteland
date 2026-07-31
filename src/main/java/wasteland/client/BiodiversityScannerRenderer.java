@@ -126,7 +126,7 @@ public class BiodiversityScannerRenderer {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         Player player = Minecraft.getInstance().player;
-        if (player == null || !(player.getMainHandItem().is(ModItems.BIODIVERSITY_SCANNER.get())) || player.getOffhandItem().is(ModItems.BIODIVERSITY_SCANNER.get())) return;
+        if (player == null || (!player.getMainHandItem().is(ModItems.BIODIVERSITY_SCANNER.get()) && !player.getOffhandItem().is(ModItems.BIODIVERSITY_SCANNER.get()))) return;
 
         rebuildIfNeeded();
 
