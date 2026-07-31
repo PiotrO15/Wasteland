@@ -8,18 +8,21 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.chunk.ChunkEventSystem;
 
+import java.util.List;
 import java.util.Set;
 
-public record BiomeEcosystemTask(int goal, BiomeType biomeType, boolean optional) implements EcosystemTask {
+public record BiomeEcosystemTask(int goal, BiomeType biomeType, boolean optional, List<AnimalSpawner> animalSpawners) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "biome_task");
 
     public static final MapCodec<BiomeEcosystemTask> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(BiomeEcosystemTask::goal),
                     BiomeType.CODEC.fieldOf("biome_type").forGetter(BiomeEcosystemTask::biomeType),
-                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(BiomeEcosystemTask::optional)
+                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(BiomeEcosystemTask::optional),
+                    AnimalSpawner.CODEC.listOf().optionalFieldOf("animal_spawners", List.of()).forGetter(BiomeEcosystemTask::animalSpawners)
             ).apply(instance, BiomeEcosystemTask::new)
     );
 
@@ -46,6 +49,11 @@ public record BiomeEcosystemTask(int goal, BiomeType biomeType, boolean optional
     @Override
     public boolean optional() {
         return optional;
+    }
+
+    @Override
+    public List<AnimalSpawner> getAnimalSpawners() {
+        return animalSpawners;
     }
 
     @Override

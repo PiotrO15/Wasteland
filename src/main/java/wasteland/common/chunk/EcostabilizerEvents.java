@@ -21,13 +21,13 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
+import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
+import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.registry.ModRegistries;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -74,7 +74,7 @@ public class EcostabilizerEvents {
     @SubscribeEvent
     public static void onTick(MachineTickEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (event.getMachine().getLevel().getRandom().nextInt(100) != 0)
+        if (event.getMachine().getLevel().getRandom().nextInt(10) != 0)
             return;
 
         if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
@@ -83,8 +83,7 @@ public class EcostabilizerEvents {
         int stage = getStage(event.getMachine());
 
         if (stage > 1) {
-            Wasteland.LOGGER.warn("Trying to spawn an animal!");
-            spawnFromCachedList((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getRandomPos(event.getMachine().getPos(), event.getMachine().getLevel(), getRadius(event.getMachine())), List.of(EntityType.PIG, EntityType.COW));
+            spawnFromCachedList((ServerLevel) event.getMachine().getLevel(), event.getMachine().getPos());
         }
     }
 
@@ -114,17 +113,19 @@ public class EcostabilizerEvents {
 
         switch (event.getRecipe().getId().toString()) {
             case "wasteland:weak_essence":
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), getRadius(event.getMachine())), "recovering"))
+                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "recovering_essence_progress", getRadius(event.getMachine())), "recovering"))
                     event.setCanceled(true);
                 break;
             case "wasteland:verdant_essence":
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), getRadius(event.getMachine())), "minecraft"))
+                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "verdant_essence_progress", getRadius(event.getMachine())), "minecraft"))
                     event.setCanceled(true);
                 break;
         }
     }
 
     public static boolean applyResolver(ServerLevel level, BlockPos pos, String namespace) {
+        if (pos == null) return false;
+
         BoundingBox boundingBox = new BoundingBox(pos.getX(), level.getMinBuildHeight(), pos.getZ(), pos.getX() + 3, level.getMaxBuildHeight(), pos.getZ() + 3);
         List<ChunkAccess> chunks = new ArrayList<>();
 
@@ -276,12 +277,16 @@ public class EcostabilizerEvents {
                 .getOrThrow(ResourceKey.create(ModRegistries.ECOSYSTEM, new ResourceLocation(Wasteland.MOD_ID, ecosystemType)));
 
         int stageBefore = getStage(machine);
+        Set<EcosystemTask> finishedTasks = new HashSet<>();
 
         Wasteland.LOGGER.warn("Starting stage recalculation at {}", pos);
         for (int i = 1; i < 5; i++) {
             boolean completed = true;
             for (var task : ecosystem.get().tasksForStage(i)) {
-                if (!task.get().optional() && task.get().getProgress(pos) != 1) {
+                boolean finished = task.get().getProgress(pos) == 1;
+                if (finished) {
+                    finishedTasks.add(task.get());
+                } else if (!task.get().optional()) {
                     completed = false;
                     break;
                 }
@@ -289,6 +294,7 @@ public class EcostabilizerEvents {
             if (!completed || i == 4) {
                 Wasteland.LOGGER.warn("Finished recalculating stage {} at {}, {}", i, pos, completed);
                 setStage(machine, (completed && i == 4) ? 5 : i);
+                ChunkEventSystem.getInstance().updateCachedAnimalSpawners(pos, i, ecosystem.get(), finishedTasks);
                 break;
             }
         }
@@ -304,17 +310,27 @@ public class EcostabilizerEvents {
         machine.setCustomData(copy);
     }
 
-    public static void spawnFromCachedList(ServerLevel level, BlockPos pos, List<EntityType<?>> cachedSpawnList) {
+    public static void spawnFromCachedList(ServerLevel level, BlockPos machinePos) {
+
+        RandomSource random = level.getRandom();
+        BlockPos pos = ChunkEventSystem.getRandomPos(machinePos, random);
+
         MobCategory category = MobCategory.CREATURE;
         NaturalSpawner.SpawnState spawnState = level.getChunkSource().getLastSpawnState();
-        if (spawnState == null || !spawnState.canSpawnForCategory(category, new ChunkPos(pos))) return;
+        if (spawnState == null || !spawnState.canSpawnForCategory(category, new ChunkPos(pos))) {
+            return;
+        }
 
         BlockPos trySpawnPos = atSurface(level, pos);
 
-        RandomSource random = level.getRandom();
-        if (cachedSpawnList.isEmpty()) return;
+        List<AnimalSpawner> animalSpawners = ChunkEventSystem.getInstance().getCachedAnimalSpawners(machinePos);
+        if (animalSpawners.isEmpty()) {
+            Wasteland.LOGGER.warn("No spawnable animals, {}", machinePos);
+            return;
+        }
 
-        EntityType<?> type = cachedSpawnList.get(random.nextInt(cachedSpawnList.size()));
+        AnimalSpawner spawner = animalSpawners.get(random.nextInt(animalSpawners.size()));
+        EntityType<?> type = level.registryAccess().lookupOrThrow(Registries.ENTITY_TYPE).get(spawner.entityType()).orElseThrow().get();
 
         if (!NaturalSpawner.isSpawnPositionOk(
                 SpawnPlacements.getPlacementType(type), level, trySpawnPos, type)) {
@@ -327,8 +343,9 @@ public class EcostabilizerEvents {
             return;
         }
 
-        type.spawn(level, trySpawnPos, MobSpawnType.NATURAL);
-        Wasteland.LOGGER.warn("Spawning at {}", trySpawnPos);
+        Entity e = type.spawn(level, spawner.nbt(), null, trySpawnPos, MobSpawnType.NATURAL, false, false);
+        e.load(e.serializeNBT().merge(spawner.nbt()));
+        Wasteland.LOGGER.warn("Spawning animal {} at {}", spawner, trySpawnPos);
     }
 
     public static BlockPos atSurface(ServerLevel level, BlockPos pos) {

@@ -2,14 +2,17 @@ package wasteland.common.block.ecostabilizer;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import wasteland.common.chunk.ChunkEventSystem;
 
 import java.util.*;
 
+@Mod.EventBusSubscriber
 public class AnimalEvents {
     private final Map<UUID, Set<BlockPos>> affectedEcostabilizers = new HashMap<>();
 
@@ -24,19 +27,27 @@ public class AnimalEvents {
     }
 
     @SubscribeEvent
-    public void onJoin(EntityJoinLevelEvent event) {
+    public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
         if (!event.getLevel().dimension().location().equals(new ResourceLocation("minecraft", "overworld"))) return;
-        if (event.getEntity() instanceof Mob mob) evaluate(mob);
+        if (event.loadedFromDisk()) return;
+        if (event.getEntity() instanceof Mob mob) AnimalEvents.getInstance().evaluate(mob);
     }
 
     @SubscribeEvent
-    public void onLeave(EntityLeaveLevelEvent event) {
+    public static void onLeave(EntityLeaveLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
         if (!event.getLevel().dimension().location().equals(new ResourceLocation("minecraft", "overworld"))) return;
         if (!(event.getEntity() instanceof Mob mob)) return;
 
-        Set<BlockPos> previous = affectedEcostabilizers.remove(mob.getUUID());
+        Entity.RemovalReason reason = mob.getRemovalReason();
+        if (reason == null) return;
+        boolean isRealRemoval = reason == Entity.RemovalReason.KILLED
+                || reason == Entity.RemovalReason.DISCARDED
+                || reason == Entity.RemovalReason.CHANGED_DIMENSION;
+        if (!isRealRemoval) return;
+
+        Set<BlockPos> previous = AnimalEvents.getInstance().affectedEcostabilizers.remove(mob.getUUID());
         if (previous == null) return;
         for (BlockPos stabilizer : previous) {
             ChunkEventSystem.getInstance().notifyMobExit(stabilizer, mob);
@@ -62,5 +73,11 @@ public class AnimalEvents {
         }
 
         affectedEcostabilizers.put(id, current);
+    }
+
+    public void registerInitial(BlockPos stabilizer, Mob mob) {
+        affectedEcostabilizers
+                .computeIfAbsent(mob.getUUID(), k -> new HashSet<>())
+                .add(stabilizer);
     }
 }

@@ -10,10 +10,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
+import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.chunk.ChunkEventSystem;
 import wasteland.common.registry.AnimalGroupRegistry;
 
-public record AnimalEcosystemTask(int goal, TagKey<EntityType<?>> animalGroup, boolean optional) implements EcosystemTask {
+import java.util.List;
+
+public record AnimalEcosystemTask(int goal, TagKey<EntityType<?>> animalGroup, boolean optional, List<AnimalSpawner> animalSpawners) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "animal_task");
 
     public AnimalEcosystemTask {
@@ -24,7 +27,8 @@ public record AnimalEcosystemTask(int goal, TagKey<EntityType<?>> animalGroup, b
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(AnimalEcosystemTask::goal),
                     TagKey.codec(Registries.ENTITY_TYPE).fieldOf("animal_group").forGetter(AnimalEcosystemTask::animalGroup),
-                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(AnimalEcosystemTask::optional)
+                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(AnimalEcosystemTask::optional),
+                    AnimalSpawner.CODEC.listOf().optionalFieldOf("animal_spawners", List.of()).forGetter(AnimalEcosystemTask::animalSpawners)
             ).apply(instance, AnimalEcosystemTask::new)
     );
 
@@ -51,6 +55,11 @@ public record AnimalEcosystemTask(int goal, TagKey<EntityType<?>> animalGroup, b
     @Override
     public boolean optional() {
         return optional;
+    }
+
+    @Override
+    public List<AnimalSpawner> getAnimalSpawners() {
+        return animalSpawners;
     }
 
     @Override

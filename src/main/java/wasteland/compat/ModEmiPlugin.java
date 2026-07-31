@@ -30,7 +30,6 @@ public class ModEmiPlugin implements EmiPlugin {
                 : RegistryAccess.EMPTY;
 
         registryAccess.lookupOrThrow(ModRegistries.ECOSYSTEM_TASK).listElements().forEach(element -> {
-            Wasteland.LOGGER.warn("[EMI Wasteland] Registering recipe with id {}", toRecipeId(element.key().location()));
             registry.addRecipe(new EcosystemTaskEmiRecipe(toRecipeId(element.key().location()), element.get(), registryAccess));
         });
     }

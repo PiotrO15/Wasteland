@@ -20,6 +20,8 @@ public class EntityMoveMixin {
     private void wasteland$onSetPos(double x, double y, double z, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
         if (self.level().isClientSide()) return;
+        if (!self.isAddedToWorld()) return;
+        if (self.isRemoved()) return;
         if (!(self instanceof Mob mob)) return;
 
         BlockPos quantized = ChunkEventSystem.quantize(self.blockPosition());
@@ -33,6 +35,8 @@ public class EntityMoveMixin {
     private void wasteland$onMoveTo(double x, double y, double z, float pitch, float yaw, CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
         if (self.level().isClientSide()) return;
+        if (!self.isAddedToWorld()) return;
+        if (self.isRemoved()) return;
         if (!(self instanceof Mob mob)) return;
 
         BlockPos quantized = ChunkEventSystem.quantize(self.blockPosition());

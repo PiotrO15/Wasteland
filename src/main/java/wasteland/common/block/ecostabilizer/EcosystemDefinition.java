@@ -6,7 +6,9 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.resources.ResourceLocation;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public record EcosystemDefinition(ResourceLocation id, List<EcosystemStage> stages) {
     public static final Codec<EcosystemDefinition> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -19,5 +21,15 @@ public record EcosystemDefinition(ResourceLocation id, List<EcosystemStage> stag
             if (s.stage() == stage) return s.tasks();
         }
         return HolderSet.direct();
+    }
+
+    public Set<AnimalSpawner> getAnimalSpawners(int stage) {
+        Set<AnimalSpawner> animalSpawners = new HashSet<>();
+        for (var s : stages) {
+            if (s.stage() == stage) break;
+
+            animalSpawners.addAll(s.animalSpawners());
+        }
+        return animalSpawners;
     }
 }

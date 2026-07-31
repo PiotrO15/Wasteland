@@ -7,9 +7,12 @@ import net.minecraft.core.RegistryCodecs;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.registry.ModRegistries;
 
-public record EcosystemStage(int stage, HolderSet<EcosystemTask> tasks) {
+import java.util.List;
+
+public record EcosystemStage(int stage, HolderSet<EcosystemTask> tasks, List<AnimalSpawner> animalSpawners) {
     public static final Codec<EcosystemStage> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("stage").forGetter(ecosystemStage -> ecosystemStage.stage),
-            RegistryCodecs.homogeneousList(ModRegistries.ECOSYSTEM_TASK).fieldOf("tasks").forGetter(EcosystemStage::tasks)
+            RegistryCodecs.homogeneousList(ModRegistries.ECOSYSTEM_TASK).fieldOf("tasks").forGetter(EcosystemStage::tasks),
+            AnimalSpawner.CODEC.listOf().optionalFieldOf("animal_spawners", List.of()).forGetter(EcosystemStage::animalSpawners)
     ).apply(instance, EcosystemStage::new));
 }

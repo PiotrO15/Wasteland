@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
@@ -12,8 +13,12 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import wasteland.Wasteland;
+import wasteland.common.block.ecostabilizer.AnimalEvents;
+import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.block.ecostabilizer.Ecosystem;
+import wasteland.common.block.ecostabilizer.EcosystemDefinition;
 import wasteland.common.block.ecostabilizer.task.BiomeEcosystemTask;
+import wasteland.common.block.ecostabilizer.task.EcosystemTask;
 import wasteland.common.registry.AnimalGroupRegistry;
 import wasteland.common.registry.BlockGroupRegistry;
 
@@ -29,6 +34,7 @@ public class ChunkEventSystem {
     private final Map<BlockPos, MBDMachine> machineData = new HashMap<>();
     private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
     private final Map<BlockPos, Map<TagKey<EntityType<?>>, Integer>> animalData = new HashMap<>();
+    private final Map<BlockPos, List<AnimalSpawner>> cachedAnimalSpawners = new HashMap<>();
     private static final Map<BlockPos, Integer> spiralProgress = new HashMap<>();
 
     private static ChunkEventSystem instance;
@@ -131,6 +137,7 @@ public class ChunkEventSystem {
                         for (TagKey<EntityType<?>> type : AnimalGroupRegistry.values()) {
                             if (AnimalGroupRegistry.matches(type, mob)) {
                                 counts.put(type, counts.getOrDefault(type, 0) + 1);
+                                AnimalEvents.getInstance().registerInitial(stabilizer, mob);
                             }
                         }
                         seen.add(mob.getUUID());
@@ -245,19 +252,18 @@ public class ChunkEventSystem {
         return dx * dx + dz * dz <= (asQuart(radius) + 0.5) * (asQuart(radius) + 0.5);
     }
 
-    public static BlockPos getRandomPos(BlockPos centerPos, Level level, int radius) {
+    public static BlockPos getRandomPos(BlockPos centerPos, RandomSource random) {
         BlockPos origin = quantize(centerPos);
+        int radius = ChunkEventSystem.getInstance().machineRadius.get(centerPos);
 
         while (true) {
-            int dx = level.getRandom().nextIntBetweenInclusive(-radius, radius);
-            int dz = level.getRandom().nextIntBetweenInclusive(-radius, radius);
+            int dx = random.nextIntBetweenInclusive(-radius, radius);
+            int dz = random.nextIntBetweenInclusive(-radius, radius);
 
-            BlockPos random = quantize(new BlockPos(dx + origin.getX(), origin.getY(), dz + origin.getZ()));
-            if (withinRadius(random, centerPos, radius)) {
-                Wasteland.LOGGER.warn("Found random spot at {}", random);
-                return random;
+            BlockPos randomPos = quantize(new BlockPos(dx + origin.getX(), origin.getY(), dz + origin.getZ()));
+            if (withinRadius(randomPos, centerPos, radius)) {
+                return randomPos;
             }
-            Wasteland.LOGGER.warn("Failed random spot, not inside the radius {}, {}", radius, random);
         }
     }
 
@@ -297,15 +303,21 @@ public class ChunkEventSystem {
         });
     }
 
-    public static BlockPos getNextSpiralPos(BlockPos centerPos, int radius) {
+    public static BlockPos getNextSpiralPos(BlockPos centerPos, String name, int radius) {
         BlockPos origin = quantize(centerPos);
         List<int[]> offsets = spiralOffsets(asQuart(radius));
 
-        int index = spiralProgress.getOrDefault(origin, 0);
-        if (index >= offsets.size()) index = 0;
+        MBDMachine machine = ChunkEventSystem.getInstance().machineData.get(centerPos);
+
+
+        int index = machine.getCustomData().getInt(name);
+        if (index == -1) index = 0;
+        if (index >= offsets.size()) return null;
 
         int[] off = offsets.get(index);
-        spiralProgress.put(origin, index + 1);
+
+        final int newIndex = index + 1;
+        EcostabilizerEvents.setCustomData(machine, compoundTag -> compoundTag.putInt(name, newIndex));
 
         return new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
     }
@@ -320,6 +332,7 @@ public class ChunkEventSystem {
 
     private void updateMobCount(BlockPos stabilizer, Mob mob, int amount) {
         MBDMachine machine = machineData.get(stabilizer);
+        if (machine == null) return;
 
         boolean changed = false;
 
@@ -327,7 +340,11 @@ public class ChunkEventSystem {
             if (AnimalGroupRegistry.matches(type, mob)) {
                 int value = animalData.getOrDefault(stabilizer, Map.of()).getOrDefault(type, 0) + amount;
                 animalData.getOrDefault(stabilizer, new HashMap<>()).put(type, value);
-                Wasteland.LOGGER.warn("Mob {} at {} changed group {} for block at {}, delta {}, new value {}", mob.getType(), mob.blockPosition(), type.location(), stabilizer, amount, value);
+                if (amount == -1) {
+                    Wasteland.LOGGER.warn("Mob {} at {} left Ecostabilizer({}) radius, new amount: {}", mob.getType(), mob.blockPosition(), stabilizer, value);
+                } else {
+                    Wasteland.LOGGER.warn("Mob {} at {} entered Ecostabilizer({}) radius, new amount: {}", mob.getType(), mob.blockPosition(), stabilizer, value);
+                }
                 changed = true;
             }
         }
@@ -335,5 +352,19 @@ public class ChunkEventSystem {
         if (changed) {
             EcostabilizerEvents.recalculateStages(stabilizer, machine, mob.level().registryAccess());
         }
+    }
+
+    public void updateCachedAnimalSpawners(BlockPos blockPos, int stage, EcosystemDefinition ecosystem, Set<EcosystemTask> finishedTasks) {
+        List<AnimalSpawner> animalSpawners = new ArrayList<>();
+
+        finishedTasks.forEach(task -> animalSpawners.addAll(task.getAnimalSpawners()));
+
+        animalSpawners.addAll(ecosystem.getAnimalSpawners(stage));
+
+        cachedAnimalSpawners.put(blockPos, animalSpawners);
+    }
+
+    public List<AnimalSpawner> getCachedAnimalSpawners(BlockPos blockPos) {
+        return cachedAnimalSpawners.getOrDefault(blockPos, List.of());
     }
 }

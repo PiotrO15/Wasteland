@@ -11,10 +11,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
+import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.registry.BlockGroupRegistry;
 import wasteland.common.chunk.ChunkEventSystem;
 
-public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean optional) implements EcosystemTask {
+import java.util.List;
+
+public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean optional, List<AnimalSpawner> animalSpawners) implements EcosystemTask {
     public static final ResourceLocation id = new ResourceLocation("wasteland", "block_task");
 
     public BlockEcosystemTask {
@@ -25,7 +28,8 @@ public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean opt
             instance -> instance.group(
                     Codec.INT.fieldOf("goal").forGetter(BlockEcosystemTask::goal),
                     TagKey.codec(Registries.BLOCK).fieldOf("block_group").forGetter(BlockEcosystemTask::blockGroup),
-                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(BlockEcosystemTask::optional)
+                    Codec.BOOL.optionalFieldOf("optional", false).forGetter(BlockEcosystemTask::optional),
+                    AnimalSpawner.CODEC.listOf().optionalFieldOf("animal_spawners", List.of()).forGetter(BlockEcosystemTask::animalSpawners)
             ).apply(instance, BlockEcosystemTask::new)
     );
 
@@ -47,6 +51,11 @@ public record BlockEcosystemTask(int goal, TagKey<Block> blockGroup, boolean opt
     @Override
     public double getProgress(BlockPos pos) {
         return Math.min(1, (double) getProgressValue(pos) / getGoal());
+    }
+
+    @Override
+    public List<AnimalSpawner> getAnimalSpawners() {
+        return animalSpawners;
     }
 
     @Override
