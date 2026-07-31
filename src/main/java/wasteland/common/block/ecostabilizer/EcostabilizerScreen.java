@@ -164,7 +164,7 @@ public class EcostabilizerScreen {
         else
             taskGroup.addWidget(new ImageWidget(3, 3, 16, 16, task.getIcon(registryAccess)));
 
-        TextTextureWidget progressText = new TextTextureWidget(23, 6, 125, 10,
+        TextTextureWidget progressText = new TextTextureWidget(23, 5, 125, 10,
                 task.getProgressValue(pos) + "/" + task.getGoal());
         progressText.getTextTexture()
                 .setDropShadow(false)
@@ -182,6 +182,29 @@ public class EcostabilizerScreen {
             });
             emiArea.appendHoverTooltips(task.getTooltip());
             taskGroup.addWidget(emiArea);
+        }
+
+        int shift = 0;
+        if (!task.getAnimalSpawners().isEmpty()) {
+            ImageWidget taskRewardWidget = new ImageWidget(140, 4, 8, 8, new ResourceTexture("wasteland:textures/gui/task_reward_icon.png"));
+
+            taskRewardWidget.appendHoverTooltips(
+                    Component.translatable("gui.ecostabilizer.task.rewards").withStyle(ChatFormatting.YELLOW),
+                    Component.literal("⏵ ").withStyle(ChatFormatting.GOLD)
+                            .append(Component.translatable("gui.ecostabilizer.task.rewards." + taskHolder.unwrapKey().get().location().toLanguageKey())
+                                    .withStyle(ChatFormatting.WHITE))
+            );
+
+            taskGroup.addWidget(taskRewardWidget);
+
+            shift++;
+        }
+        if (task.optional()) {
+            ImageWidget optionalTaskWidget = new ImageWidget(140 - 10 * shift, 4, 8, 8, new ResourceTexture("wasteland:textures/gui/optional_task_icon.png"));
+
+            optionalTaskWidget.appendHoverTooltips(Component.translatable("gui.ecostabilizer.task.optional"));
+
+            taskGroup.addWidget(optionalTaskWidget);
         }
 
         return taskGroup;
