@@ -24,8 +24,8 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
 
     private final Map<Integer, Map<TagKey<Block>, Integer>> data = new HashMap<>();
 
-    public static final int CURRENT_SCAN_HASH_INDEX = 1;
-    private int scannedHash = CURRENT_SCAN_HASH_INDEX;
+    public static final int CURRENT_SCAN_HASH_INDEX = 2;
+    private int scannedHash = 0;
 
     public VerdantChunk(LevelChunk chunk) {
         this.chunk = chunk;
