@@ -11,9 +11,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeResolver;
@@ -22,6 +24,7 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.common.util.TriPredicate;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.AnimalSpawner;
@@ -129,11 +132,27 @@ public class EcostabilizerEvents {
 
         switch (event.getRecipe().getId().toString()) {
             case "wasteland:weak_essence":
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "recovering_essence_progress", getRadius(event.getMachine())), "recovering"))
+                TriPredicate<Level, BlockPos, TagKey<Biome>> weakEssencePredicate = (level, blockPos, tagKey) -> {
+                    int quartX = QuartPos.fromBlock(blockPos.getX());
+                    int quartZ = QuartPos.fromBlock(blockPos.getZ());
+                    Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
+
+                    if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland"))) return false;
+                    return biomeHolder.is(tagKey);
+                };
+                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "recovering_essence_progress", getRadius(event.getMachine()), weakEssencePredicate), "recovering"))
                     event.setCanceled(true);
                 break;
             case "wasteland:verdant_essence":
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "verdant_essence_progress", getRadius(event.getMachine())), "minecraft"))
+                TriPredicate<Level, BlockPos, TagKey<Biome>> verdantEssencePredicate = (level, blockPos, tagKey) -> {
+                    int quartX = QuartPos.fromBlock(blockPos.getX());
+                    int quartZ = QuartPos.fromBlock(blockPos.getZ());
+                    Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
+
+                    if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland")) && !biomeHolder.is(biome -> biome.location().getNamespace().equals("recovering"))) return false;
+                    return biomeHolder.is(tagKey);
+                };
+                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "verdant_essence_progress", getRadius(event.getMachine()), verdantEssencePredicate), "minecraft"))
                     event.setCanceled(true);
                 break;
         }

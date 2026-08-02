@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.common.util.TriPredicate;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.AnimalEvents;
 import wasteland.common.block.ecostabilizer.AnimalSpawner;
@@ -320,6 +321,39 @@ public class ChunkEventSystem {
         EcostabilizerEvents.setCustomData(machine, compoundTag -> compoundTag.putInt(name, newIndex));
 
         return new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
+    }
+
+    public static BlockPos getNextSpiralPos(BlockPos centerPos, String name, int radius, TriPredicate<Level, BlockPos, TagKey<Biome>> filter) {
+        BlockPos origin = quantize(centerPos);
+        List<int[]> offsets = spiralOffsets(asQuart(radius));
+
+        MBDMachine machine = ChunkEventSystem.getInstance().machineData.get(centerPos);
+        Level level = machine.getLevel();
+
+        Ecosystem ecosystem = EcostabilizerEvents.getEcosystem(machine);
+        if (ecosystem == null) return null;
+
+        int index = machine.getCustomData().getInt(name);
+        if (index == -1) index = 0;
+        if (index >= offsets.size()) return null;
+
+        while (index < offsets.size()) {
+            int[] off = offsets.get(index);
+
+            BlockPos candidate = new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
+            int nextIndex = index + 1;
+
+            if (filter.test(level, candidate, ecosystem.getBiomeTag())) {
+                EcostabilizerEvents.setCustomData(machine, compoundTag -> compoundTag.putInt(name, nextIndex));
+                return candidate;
+            }
+
+            index = nextIndex;
+        }
+
+        final int exhausted = index;
+        EcostabilizerEvents.setCustomData(machine, compoundTag -> compoundTag.putInt(name, exhausted));
+        return null;
     }
 
     public void notifyMobEnter(BlockPos stabilizer, Mob mob) {
