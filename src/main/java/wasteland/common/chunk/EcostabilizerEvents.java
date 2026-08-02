@@ -2,6 +2,7 @@ package wasteland.common.chunk;
 
 import com.lowdragmc.mbd2.common.machine.MBDMachine;
 import com.lowdragmc.mbd2.common.machine.definition.config.event.*;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.core.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -9,6 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.level.ChunkPos;
@@ -19,6 +21,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.AnimalSpawner;
@@ -33,14 +36,27 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class EcostabilizerEvents {
-    private static final ResourceLocation machineId = new ResourceLocation("wasteland", "ecostabilizer");
+    private static final ResourceLocation basicMachineId = new ResourceLocation("wasteland", "ecostabilizer");
     private static final ResourceLocation improvedMachineId = new ResourceLocation("wasteland", "improved_ecostabilizer");
 
     @SubscribeEvent
     public static void onFormed(MachineStructureFormedEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
+        ResourceLocation machineId = event.getMachine().getDefinition().id();
+        if (!machineId.equals(basicMachineId) && !machineId.equals(improvedMachineId))
             return;
+
+        AABB box = new AABB(event.getMachine().getPos()).inflate(10.0D);
+        List<ServerPlayer> nearby = event.getMachine().getLevel().getEntitiesOfClass(ServerPlayer.class, box);
+
+        Advancement advancement = event.getMachine().getLevel().getServer().getAdvancements()
+                .getAdvancement(new ResourceLocation("wasteland", machineId.equals(basicMachineId) ? "ecostabilizer/root" : "ecostabilizer/improved_ecostabilizer_formed"));
+
+        if (advancement != null) {
+            for (ServerPlayer player : nearby) {
+                player.getAdvancements().award(advancement, "impossible");
+            }
+        }
 
         Ecosystem ecosystem = getOrCreateEcosystem(event.getMachine());
 
@@ -63,7 +79,7 @@ public class EcostabilizerEvents {
     @SubscribeEvent
     public static void onRemove(MachineRemovedEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId)) {
+        if (!event.getMachine().getDefinition().id().equals(basicMachineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId)) {
             return;
         }
 
@@ -77,7 +93,7 @@ public class EcostabilizerEvents {
         if (event.getMachine().getLevel().getRandom().nextInt(50) != 0)
             return;
 
-        if (!event.getMachine().getDefinition().id().equals(machineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
+        if (!event.getMachine().getDefinition().id().equals(basicMachineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
             return;
 
         int stage = getStage(event.getMachine());
@@ -350,5 +366,33 @@ public class EcostabilizerEvents {
     public static BlockPos atSurface(ServerLevel level, BlockPos pos) {
         int y = level.getChunkAt(pos).getHeight(Heightmap.Types.WORLD_SURFACE, pos.getX(), pos.getZ());
         return new BlockPos(pos.getX(), y, pos.getZ());
+    }
+
+    public static void grantAdvancements(ServerPlayer player, Ecosystem ecosystem, int stage) {
+        switch (stage) {
+            case 1:
+                return;
+            case 2:
+                grantAdvancement(player, "ecostabilizer/groundwork_stage_completed");
+                return;
+            case 3:
+                grantAdvancement(player, "ecostabilizer/biomass_stage_completed");
+                return;
+            case 4:
+                grantAdvancement(player, "ecostabilizer/habitation_stage_completed");
+                return;
+            case 5:
+                grantAdvancement(player, "ecostabilizer/biosphere_stage_completed");
+                grantAdvancement(player, "ecostabilizer/" + ecosystem.getFriendlyName() + "_ecosystem_restored");
+        }
+    }
+
+    private static void grantAdvancement(ServerPlayer player, String advancementName) {
+        if (advancementName == null) return;
+        Advancement advancement = player.getServer().getAdvancements()
+                .getAdvancement(new ResourceLocation("wasteland", advancementName));
+
+        if (advancement == null) return;
+        player.getAdvancements().award(advancement, "impossible");
     }
 }

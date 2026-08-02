@@ -18,6 +18,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
 import wasteland.common.block.ecostabilizer.task.AnimalEcosystemTask;
@@ -62,6 +63,10 @@ public class EcostabilizerScreen {
 
         Ecosystem ecosystemType = EcostabilizerEvents.getEcosystem(machine);
         int transformationStage = EcostabilizerEvents.getStage(machine);
+        if (event.getPlayer() instanceof ServerPlayer serverPlayer) {
+            EcostabilizerEvents.grantAdvancements(serverPlayer, ecosystemType, transformationStage);
+        }
+
         int radius = EcostabilizerEvents.getRadius(machine);
 
         RegistryAccess registryAccess;
