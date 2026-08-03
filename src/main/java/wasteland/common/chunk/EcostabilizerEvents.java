@@ -52,13 +52,8 @@ public class EcostabilizerEvents {
         AABB box = new AABB(event.getMachine().getPos()).inflate(10.0D);
         List<ServerPlayer> nearby = event.getMachine().getLevel().getEntitiesOfClass(ServerPlayer.class, box);
 
-        Advancement advancement = event.getMachine().getLevel().getServer().getAdvancements()
-                .getAdvancement(new ResourceLocation("wasteland", machineId.equals(basicMachineId) ? "ecostabilizer/root" : "ecostabilizer/improved_ecostabilizer_formed"));
-
-        if (advancement != null) {
-            for (ServerPlayer player : nearby) {
-                player.getAdvancements().award(advancement, "impossible");
-            }
+        for (ServerPlayer player : nearby) {
+            grantAdvancement(player, machineId.equals(basicMachineId) ? "ecostabilizer/root" : "ecostabilizer/improved_ecostabilizer_formed");
         }
 
         Ecosystem ecosystem = getOrCreateEcosystem(event.getMachine());
@@ -80,7 +75,7 @@ public class EcostabilizerEvents {
     }
 
     @SubscribeEvent
-    public static void onRemove(MachineRemovedEvent event) {
+    public static void onRemove(MachineStructureInvalidEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
         if (!event.getMachine().getDefinition().id().equals(basicMachineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId)) {
             return;
@@ -93,11 +88,12 @@ public class EcostabilizerEvents {
     @SubscribeEvent
     public static void onTick(MachineTickEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
-        if (event.getMachine().getLevel().getRandom().nextInt(50) != 0)
-            return;
+        if (event.getMachine().getLevel().getRandom().nextInt(50) != 0) return;
 
-        if (!event.getMachine().getDefinition().id().equals(basicMachineId) && !event.getMachine().getDefinition().id().equals(improvedMachineId))
-            return;
+        if (!event.getMachine().getDefinition().id().equals(basicMachineId) &&
+                !event.getMachine().getDefinition().id().equals(improvedMachineId)) return;
+
+        if (event.getMachine().getMachineStateName().equals("base")) return;
 
         int stage = getStage(event.getMachine());
 

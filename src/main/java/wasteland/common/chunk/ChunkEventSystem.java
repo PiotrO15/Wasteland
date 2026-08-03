@@ -36,7 +36,6 @@ public class ChunkEventSystem {
     private final Map<BlockPos, Integer> machineRadius = new HashMap<>();
     private final Map<BlockPos, Map<TagKey<EntityType<?>>, Integer>> animalData = new HashMap<>();
     private final Map<BlockPos, List<AnimalSpawner>> cachedAnimalSpawners = new HashMap<>();
-    private static final Map<BlockPos, Integer> spiralProgress = new HashMap<>();
 
     private static ChunkEventSystem instance;
 
@@ -46,6 +45,7 @@ public class ChunkEventSystem {
     }
 
     public void computeStats(BlockPos stabilizer, int radius, Level level) {
+        Wasteland.LOGGER.warn("Running computeStats for ecostabilizer at {} with radius {}", stabilizer, radius);
         int chunkRadius = radius / 4;
         Map<TagKey<Block>, Integer> groups = new HashMap<>();
 
@@ -62,17 +62,13 @@ public class ChunkEventSystem {
                     if (verdantChunk != null) {
                         for (TagKey<Block> blockGroup : BlockGroupRegistry.values()) {
                             groups.put(blockGroup, groups.getOrDefault(blockGroup, 0) + verdantChunk.getLocalCount(mutable, blockGroup));
-//                            Wasteland.LOGGER.warn("Adding {} {} for subchunk at {}", verdantChunk.getLocalCount(mutable, blockGroup), blockGroup, mutable);
                         }
                     }
-                } else {
-//                    mutable.set(stabilizer.getX() + dx * 4, stabilizer.getY(), stabilizer.getZ() + dz * 4);
-//                    Wasteland.LOGGER.warn("Subchunk at pos {} is outside euclidean radius! {} {}", mutable, dx, dz);
                 }
             }
         }
         blockData.put(stabilizer, groups);
-        Wasteland.LOGGER.warn("Computed biodiversity");
+        Wasteland.LOGGER.warn("Finished computeStats for ecostabilizer at {} with radius {}", stabilizer, radius);
     }
 
     public void computeBiomeStats(BlockPos stabilizer, int radius, Level level, TagKey<Biome> tag) {
@@ -102,13 +98,12 @@ public class ChunkEventSystem {
 
                         if (biome.is(tag) && namespaceMatches) {
                             count++;
-//                            Wasteland.LOGGER.warn("Biome with type found: pos={} type={}", mutable, type);
                         }
                     }
                 }
             }
             counts.put(type, count);
-            Wasteland.LOGGER.warn("Computed biome stats at {}, found {} of type {}", mutable, count, type);
+            Wasteland.LOGGER.warn("Computed biome stats at {}, found {} of type {}", stabilizer, count, type);
         }
         biomeData.put(stabilizer, counts);
     }
@@ -161,7 +156,6 @@ public class ChunkEventSystem {
         machineData.remove(entity);
         biomeData.remove(entity);
         machineRadius.remove(entity);
-        spiralProgress.remove(entity);
     }
 
     public void notifyIncrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {
@@ -169,7 +163,7 @@ public class ChunkEventSystem {
             int value = blockData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) + amount;
             blockData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
-            Wasteland.LOGGER.warn("Increased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
+            Wasteland.LOGGER.warn("Increased multiblock {} at {} with amount {}, now {}", blockGroup.location(), entity, amount, value);
         });
     }
 
@@ -178,7 +172,7 @@ public class ChunkEventSystem {
             int value = blockData.getOrDefault(entity, Map.of()).getOrDefault(blockGroup, 0) - amount;
             blockData.getOrDefault(entity, new HashMap<>()).put(blockGroup, value);
             EcostabilizerEvents.recalculateStages(entity, machineData.get(entity), level.registryAccess());
-            Wasteland.LOGGER.warn("Decreased multiblock biodiversity at {} with amount {}, now {}", entity, amount, value);
+            Wasteland.LOGGER.warn("Decreased multiblock {} at {} with amount {}, now {}", blockGroup.location(), entity, amount, value);
         });
     }
 
@@ -304,25 +298,6 @@ public class ChunkEventSystem {
         });
     }
 
-    public static BlockPos getNextSpiralPos(BlockPos centerPos, String name, int radius) {
-        BlockPos origin = quantize(centerPos);
-        List<int[]> offsets = spiralOffsets(asQuart(radius));
-
-        MBDMachine machine = ChunkEventSystem.getInstance().machineData.get(centerPos);
-
-
-        int index = machine.getCustomData().getInt(name);
-        if (index == -1) index = 0;
-        if (index >= offsets.size()) return null;
-
-        int[] off = offsets.get(index);
-
-        final int newIndex = index + 1;
-        EcostabilizerEvents.setCustomData(machine, compoundTag -> compoundTag.putInt(name, newIndex));
-
-        return new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
-    }
-
     public static BlockPos getNextSpiralPos(BlockPos centerPos, String name, int radius, TriPredicate<Level, BlockPos, TagKey<Biome>> filter) {
         BlockPos origin = quantize(centerPos);
         List<int[]> offsets = spiralOffsets(asQuart(radius));
@@ -375,9 +350,9 @@ public class ChunkEventSystem {
                 int value = animalData.getOrDefault(stabilizer, Map.of()).getOrDefault(type, 0) + amount;
                 animalData.getOrDefault(stabilizer, new HashMap<>()).put(type, value);
                 if (amount == -1) {
-                    Wasteland.LOGGER.warn("Mob {} at {} left Ecostabilizer({}) radius, new amount: {}", mob.getType(), mob.blockPosition(), stabilizer, value);
+                    Wasteland.LOGGER.warn("Mob {} at {} left Ecostabilizer({}) radius, new amount: {} for group {}", mob.getType(), mob.blockPosition(), stabilizer, value, type.location());
                 } else {
-                    Wasteland.LOGGER.warn("Mob {} at {} entered Ecostabilizer({}) radius, new amount: {}", mob.getType(), mob.blockPosition(), stabilizer, value);
+                    Wasteland.LOGGER.warn("Mob {} at {} entered Ecostabilizer({}) radius, new amount: {} for group {}", mob.getType(), mob.blockPosition(), stabilizer, value, type.location());
                 }
                 changed = true;
             }
