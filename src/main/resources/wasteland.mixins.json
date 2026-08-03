@@ -13,6 +13,7 @@
     "EnchantedDistillingCategoryPatch",
     "EntityMoveMixin",
     "LevelChunkMixin",
+    "ImmersiveEngineeringFluidPipePatch",
     "ProductiveBeesSussyBeePatch"
   ],
   "compatibilityLevel": "JAVA_17",

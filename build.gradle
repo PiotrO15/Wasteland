@@ -133,6 +133,7 @@ dependencies {
     implementation fg.deobf("com.lowdragmc.multiblocked2:Multiblocked2:${minecraft_version}-${mbd2_version}") { transitive = false }
 
     compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}:api")
+    implementation fg.deobf("curse.maven:immersive-engineering-231951:6206989")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
