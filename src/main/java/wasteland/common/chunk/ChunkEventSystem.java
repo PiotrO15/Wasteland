@@ -298,6 +298,27 @@ public class ChunkEventSystem {
         });
     }
 
+    public static boolean hasNextSpiralPos(BlockPos centerPos, String name, int radius, TriPredicate<Level, BlockPos, TagKey<Biome>> filter) {
+        BlockPos origin = quantize(centerPos);
+        List<int[]> offsets = spiralOffsets(asQuart(radius));
+
+        MBDMachine machine = ChunkEventSystem.getInstance().machineData.get(centerPos);
+        Level level = machine.getLevel();
+
+        Ecosystem ecosystem = EcostabilizerEvents.getEcosystem(machine);
+        if (ecosystem == null) return false;
+
+        int index = machine.getCustomData().getInt(name);
+        if (index == -1) index = 0;
+
+        for (int i = index; i < offsets.size(); i++) {
+            int[] off = offsets.get(i);
+            BlockPos candidate = new BlockPos(origin.getX() + off[0] * 4, origin.getY(), origin.getZ() + off[1] * 4);
+            if (filter.test(level, candidate, ecosystem.getBiomeTag())) return true;
+        }
+        return false;
+    }
+
     public static BlockPos getNextSpiralPos(BlockPos centerPos, String name, int radius, TriPredicate<Level, BlockPos, TagKey<Biome>> filter) {
         BlockPos origin = quantize(centerPos);
         List<int[]> offsets = spiralOffsets(asQuart(radius));

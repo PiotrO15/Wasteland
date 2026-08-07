@@ -82,7 +82,7 @@ public class EcostabilizerEvents {
         }
 
         ChunkEventSystem.getInstance().unregisterListener(event.getMachine().getPos());
-        Wasteland.LOGGER.warn("Removed machine with id {}", event.getMachine().getPos());
+        Wasteland.LOGGER.warn("Removed invalid machine at {}", event.getMachine().getPos());
     }
 
     @SubscribeEvent
@@ -102,20 +102,39 @@ public class EcostabilizerEvents {
         }
     }
 
+    private static final TriPredicate<Level, BlockPos, TagKey<Biome>> weakEssencePredicate = (level, blockPos, tagKey) -> {
+        int quartX = QuartPos.fromBlock(blockPos.getX());
+        int quartZ = QuartPos.fromBlock(blockPos.getZ());
+        Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
+
+        if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland"))) return false;
+        return biomeHolder.is(tagKey);
+    };
+
+    private static final TriPredicate<Level, BlockPos, TagKey<Biome>> verdantEssencePredicate = (level, blockPos, tagKey) -> {
+        int quartX = QuartPos.fromBlock(blockPos.getX());
+        int quartZ = QuartPos.fromBlock(blockPos.getZ());
+        Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
+
+        if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland")) && !biomeHolder.is(biome -> biome.location().getNamespace().equals("recovering"))) return false;
+        return biomeHolder.is(tagKey);
+    };
+
     @SubscribeEvent
     public static void beforeRecipe(MachineBeforeRecipeWorkingEvent event) {
         if (event.getMachine().getLevel().isClientSide()) return;
         if (!event.getMachine().getDefinition().id().equals(improvedMachineId)) return;
 
         int stage = getStage(event.getMachine());
+        BlockPos machinePos = event.getMachine().getPos();
 
         switch (event.getRecipe().getId().toString()) {
             case "wasteland:weak_essence":
-                if (stage < 2)
+                if (stage < 2 || !ChunkEventSystem.hasNextSpiralPos(machinePos, "recovering_essence_progress", getRadius(event.getMachine()), weakEssencePredicate))
                     event.setCanceled(true);
                 break;
             case "wasteland:verdant_essence":
-                if (stage < 4)
+                if (stage < 4 || !ChunkEventSystem.hasNextSpiralPos(machinePos, "verdant_essence_progress", getRadius(event.getMachine()), verdantEssencePredicate))
                     event.setCanceled(true);
                 break;
         }
@@ -128,34 +147,16 @@ public class EcostabilizerEvents {
 
         switch (event.getRecipe().getId().toString()) {
             case "wasteland:weak_essence":
-                TriPredicate<Level, BlockPos, TagKey<Biome>> weakEssencePredicate = (level, blockPos, tagKey) -> {
-                    int quartX = QuartPos.fromBlock(blockPos.getX());
-                    int quartZ = QuartPos.fromBlock(blockPos.getZ());
-                    Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
-
-                    if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland"))) return false;
-                    return biomeHolder.is(tagKey);
-                };
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "recovering_essence_progress", getRadius(event.getMachine()), weakEssencePredicate), "recovering"))
-                    event.setCanceled(true);
+                applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "recovering_essence_progress", getRadius(event.getMachine()), weakEssencePredicate), "recovering");
                 break;
             case "wasteland:verdant_essence":
-                TriPredicate<Level, BlockPos, TagKey<Biome>> verdantEssencePredicate = (level, blockPos, tagKey) -> {
-                    int quartX = QuartPos.fromBlock(blockPos.getX());
-                    int quartZ = QuartPos.fromBlock(blockPos.getZ());
-                    Holder<Biome> biomeHolder = level.getNoiseBiome(quartX, 79, quartZ);
-
-                    if (!biomeHolder.is(biome -> biome.location().getNamespace().equals("wasteland")) && !biomeHolder.is(biome -> biome.location().getNamespace().equals("recovering"))) return false;
-                    return biomeHolder.is(tagKey);
-                };
-                if (!applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "verdant_essence_progress", getRadius(event.getMachine()), verdantEssencePredicate), "minecraft"))
-                    event.setCanceled(true);
+                applyResolver((ServerLevel) event.getMachine().getLevel(), ChunkEventSystem.getNextSpiralPos(event.getMachine().getPos(), "verdant_essence_progress", getRadius(event.getMachine()), verdantEssencePredicate), "minecraft");
                 break;
         }
     }
 
-    public static boolean applyResolver(ServerLevel level, BlockPos pos, String namespace) {
-        if (pos == null) return false;
+    public static void applyResolver(ServerLevel level, BlockPos pos, String namespace) {
+        if (pos == null) return;
 
         BoundingBox boundingBox = new BoundingBox(pos.getX(), level.getMinBuildHeight(), pos.getZ(), pos.getX() + 3, level.getMaxBuildHeight(), pos.getZ() + 3);
         List<ChunkAccess> chunks = new ArrayList<>();
@@ -177,7 +178,6 @@ public class EcostabilizerEvents {
         }
 
         level.getChunkSource().chunkMap.resendBiomesForChunks(chunks);
-        return true;
     }
 
     public static BiomeResolver makeEcostabilizerResolver(ChunkAccess chunk, BoundingBox boundingBox, ServerLevel level, String targetNamespace, Predicate<Holder<Biome>> predicate) {
