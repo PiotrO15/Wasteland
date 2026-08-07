@@ -342,6 +342,11 @@ public class EcostabilizerEvents {
     }
 
     public static void spawnFromCachedList(ServerLevel level, BlockPos machinePos) {
+        List<AnimalSpawner> animalSpawners = ChunkEventSystem.getInstance().getCachedAnimalSpawners(machinePos);
+        if (animalSpawners.isEmpty()) {
+            Wasteland.LOGGER.warn("No spawnable animals, {}", machinePos);
+            return;
+        }
 
         RandomSource random = level.getRandom();
         BlockPos pos = ChunkEventSystem.getRandomPos(machinePos, random);
@@ -353,12 +358,6 @@ public class EcostabilizerEvents {
         }
 
         BlockPos trySpawnPos = atSurface(level, pos);
-
-        List<AnimalSpawner> animalSpawners = ChunkEventSystem.getInstance().getCachedAnimalSpawners(machinePos);
-        if (animalSpawners.isEmpty()) {
-            Wasteland.LOGGER.warn("No spawnable animals, {}", machinePos);
-            return;
-        }
 
         AnimalSpawner spawner = animalSpawners.get(random.nextInt(animalSpawners.size()));
         EntityType<?> type = level.registryAccess().lookupOrThrow(Registries.ENTITY_TYPE).get(spawner.entityType()).orElseThrow().get();
