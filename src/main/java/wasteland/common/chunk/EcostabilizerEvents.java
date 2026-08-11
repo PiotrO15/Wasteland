@@ -384,20 +384,15 @@ public class EcostabilizerEvents {
 
     public static void grantAdvancements(ServerPlayer player, Ecosystem ecosystem, int stage) {
         switch (stage) {
-            case 1:
-                return;
-            case 2:
-                grantAdvancement(player, "ecostabilizer/groundwork_stage_completed");
-                return;
-            case 3:
-                grantAdvancement(player, "ecostabilizer/biomass_stage_completed");
-                return;
-            case 4:
-                grantAdvancement(player, "ecostabilizer/habitation_stage_completed");
-                return;
             case 5:
                 grantAdvancement(player, "ecostabilizer/biosphere_stage_completed");
                 grantAdvancement(player, "ecostabilizer/" + ecosystem.getFriendlyName() + "_ecosystem_restored");
+            case 4:
+                grantAdvancement(player, "ecostabilizer/habitation_stage_completed");
+            case 3:
+                grantAdvancement(player, "ecostabilizer/biomass_stage_completed");
+            case 2:
+                grantAdvancement(player, "ecostabilizer/groundwork_stage_completed");
         }
     }
 
