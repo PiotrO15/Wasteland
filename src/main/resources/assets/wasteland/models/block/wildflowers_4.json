@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/flowerbed_4",
-  "textures": {
-    "flowerbed": "wasteland:block/wildflowers",
-    "stem": "wasteland:block/wildflowers_stem"
-  },
-  "render_type": "cutout"
-}

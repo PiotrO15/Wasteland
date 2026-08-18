@@ -49,8 +49,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> YELLOW_DEAD_GRASS = registerBlockItem("yellow_dead_grass", new DeadGrass(6));
 
     public static final RegistryObject<Block> CLOVER = registerBlockItem("clover", new CloverBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().sound(SoundType.PINK_PETALS).pushReaction(PushReaction.DESTROY)));
-    public static final RegistryObject<Block> WILDFLOWERS = registerBlockItem("wildflowers", new PinkPetalsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().sound(SoundType.PINK_PETALS).pushReaction(PushReaction.DESTROY)));
-//    public static final RegistryObject<Block> LEAF_LITTER = registerBlockItem("leaf_litter", new PinkPetalsBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().pushReaction(PushReaction.DESTROY)));
 
     public static final RegistryObject<Block> DEAD_MUSHROOM_STEM = registerBlockItem("dead_mushroom_stem", new Block(BlockBehaviour.Properties.copy(Blocks.MUSHROOM_STEM)));
 
@@ -82,8 +80,6 @@ public class ModBlocks {
             event.accept(YELLOW_DEAD_GRASS);
 
             event.accept(CLOVER);
-            event.accept(WILDFLOWERS);
-//            event.accept(LEAF_LITTER);
             event.accept(DEAD_MUSHROOM_STEM);
         }
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
