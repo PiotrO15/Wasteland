@@ -12,8 +12,9 @@
     "EnchantedCauldronPatch",
     "EnchantedDistillingCategoryPatch",
     "EntityMoveMixin",
-    "LevelChunkMixin",
+    "FallingTreeDeadLogCompat",
     "ImmersiveEngineeringFluidPipePatch",
+    "LevelChunkMixin",
     "ProductiveBeesSussyBeePatch"
   ],
   "compatibilityLevel": "JAVA_17",
