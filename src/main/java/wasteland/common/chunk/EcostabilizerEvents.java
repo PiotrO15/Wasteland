@@ -313,11 +313,11 @@ public class EcostabilizerEvents {
         Wasteland.LOGGER.warn("Starting stage recalculation at {}", pos);
         for (int i = 1; i < 5; i++) {
             boolean completed = true;
-            for (var task : ecosystem.get().tasksForStage(i)) {
-                boolean finished = task.get().getProgress(pos) == 1;
+            for (var task : ecosystem.get().tasksForStage(i, registryAccess)) {
+                boolean finished = task.getProgress(pos) == 1;
                 if (finished) {
-                    finishedTasks.add(task.get());
-                } else if (!task.get().optional()) {
+                    finishedTasks.add(task);
+                } else if (!task.optional()) {
                     completed = false;
                     break;
                 }

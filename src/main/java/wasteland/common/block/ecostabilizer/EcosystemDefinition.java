@@ -2,8 +2,9 @@ package wasteland.common.block.ecostabilizer;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.HolderSet;
+import net.minecraft.core.RegistryAccess;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
+import wasteland.common.registry.ModRegistries;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,11 +15,13 @@ public record EcosystemDefinition(List<EcosystemStage> stages) {
             EcosystemStage.CODEC.listOf().fieldOf("stages").forGetter(EcosystemDefinition::stages)
     ).apply(i, EcosystemDefinition::new));
 
-    public HolderSet<EcosystemTask> tasksForStage(int stage) {
+    public List<EcosystemTask> tasksForStage(int stage, RegistryAccess registryAccess) {
         for (var s : stages) {
-            if (s.stage() == stage) return s.tasks();
+            if (s.stage() == stage) {
+                return s.tasks().stream().map(taskId -> registryAccess.registryOrThrow(ModRegistries.ECOSYSTEM_TASK).get(taskId)).toList();
+            }
         }
-        return HolderSet.direct();
+        return List.of();
     }
 
     public Set<AnimalSpawner> getAnimalSpawners(int stage) {

@@ -111,17 +111,17 @@ public class EcostabilizerScreen {
                 DraggableScrollableWidgetGroup scrollableWidgetGroup = (DraggableScrollableWidgetGroup) widgetGroup.getFirstWidgetById("task_group");
 
                 AtomicInteger y = new AtomicInteger();
-                ecosystem.get().tasksForStage(currentStage).forEach(task -> {
+                ecosystem.get().tasksForStage(currentStage, registryAccess).forEach(task -> {
                     scrollableWidgetGroup.addWidget(createTaskCard(y.get(), event.getMachine().getPos(), task, registryAccess, event.getPlayer().level().isClientSide));
                     y.addAndGet(28);
                 });
 
                 ProgressWidget stageProgress = (ProgressWidget) widgetGroup.getFirstWidgetById("stage_progress");
                 stageProgress.setProgressSupplier(() -> {
-                    var values = ecosystem.get().tasksForStage(currentStage).stream().toList();
+                    var values = ecosystem.get().tasksForStage(currentStage, registryAccess).stream().toList();
                     double total = 0;
                     for (var value : values) {
-                        total += value.get().getProgress(event.getMachine().getPos());
+                        total += value.getProgress(event.getMachine().getPos());
                     }
                     return total / values.size();
                 });
@@ -153,9 +153,7 @@ public class EcostabilizerScreen {
         event.getRoot().getFirstWidgetById("information_tab").appendHoverTooltips("Ecostabilizer Radius: " + radius);
     }
 
-    private static WidgetGroup createTaskCard(int y, BlockPos pos, Holder<EcosystemTask> taskHolder, RegistryAccess registryAccess, boolean clientSide) {
-        EcosystemTask task = taskHolder.get();
-
+    private static WidgetGroup createTaskCard(int y, BlockPos pos, EcosystemTask task, RegistryAccess registryAccess, boolean clientSide) {
         WidgetGroup taskGroup = new WidgetGroup(0, y, 152, 24);
         taskGroup.setBackground(new ResourceTexture("wasteland:textures/gui/task_card.png"));
 
@@ -176,13 +174,15 @@ public class EcostabilizerScreen {
                 .setColor(0x333333);
         taskGroup.addWidget(progressText);
 
-        if (clientSide && taskHolder.unwrapKey().isPresent()) {
+        ResourceLocation taskId = registryAccess.registryOrThrow(ModRegistries.ECOSYSTEM_TASK).getKey(task);
+
+        if (clientSide) {
             ButtonWidget emiArea = new ButtonWidget(0, 0, 152, 24, IGuiTexture.EMPTY, clickData -> {
-                EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(ModEmiPlugin.toRecipeId(taskHolder.unwrapKey().get().location()));
+                EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(ModEmiPlugin.toRecipeId(taskId));
                 if (recipe != null) {
                     EmiApi.displayRecipe(recipe);
                 } else {
-                    Wasteland.LOGGER.warn("No recipe! {}", taskHolder.unwrapKey().get().location());
+                    Wasteland.LOGGER.warn("No recipe! {}", taskId);
                 }
             });
             emiArea.appendHoverTooltips(task.getTooltip());
@@ -196,7 +196,7 @@ public class EcostabilizerScreen {
             taskRewardWidget.appendHoverTooltips(
                     Component.translatable("gui.ecostabilizer.task.rewards").withStyle(ChatFormatting.YELLOW),
                     Component.literal("⏵ ").withStyle(ChatFormatting.GOLD)
-                            .append(Component.translatable("gui.ecostabilizer.task.rewards." + taskHolder.unwrapKey().get().location().toLanguageKey())
+                            .append(Component.translatable("gui.ecostabilizer.task.rewards." + taskId.toLanguageKey())
                                     .withStyle(ChatFormatting.WHITE))
             );
 
