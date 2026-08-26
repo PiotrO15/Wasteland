@@ -13,6 +13,7 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.DeferredRegister;
@@ -32,6 +33,7 @@ import wasteland.common.item.BiodiversityScanner;
 import wasteland.common.item.Compost;
 import wasteland.common.item.ModItems;
 import wasteland.common.registry.ModRegistries;
+import wasteland.compat.agricraft.AgriCraftPlugin;
 import wasteland.tree.BeehiveProbabilityModifier;
 
 @Mod(Wasteland.MOD_ID)
@@ -53,6 +55,7 @@ public class Wasteland {
         modEventBus.addListener(ModBlocks::buildContents);
         modEventBus.addListener(ModItems::buildContents);
         modEventBus.addListener(ModRegistries::registerDataRegistries);
+        modEventBus.addListener(Wasteland::onCommonSetup);
 
         if (FMLEnvironment.dist.isClient()) {
             ClientSetup.onModConstruction();
@@ -66,6 +69,11 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(EcostabilizerScreen.class);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
+    }
+
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        AgriCraftPlugin.init();
     }
 
     public static final RegistryObject<ProgWidgetType<ProgWidgetPurify>> PURIFY =
