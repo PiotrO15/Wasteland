@@ -4,6 +4,7 @@ import me.desht.pneumaticcraft.api.PneumaticRegistry;
 import me.desht.pneumaticcraft.api.drone.ProgWidgetType;
 import me.desht.pneumaticcraft.common.core.ModProgWidgets;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.animal.Parrot;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
@@ -74,6 +75,7 @@ public class Wasteland {
     @SubscribeEvent
     public static void onCommonSetup(FMLCommonSetupEvent event) {
         AgriCraftPlugin.init();
+        Parrot.TAME_FOOD.add(com.agricraft.agricraft.common.registry.ModItems.SEED.get());
     }
 
     public static final RegistryObject<ProgWidgetType<ProgWidgetPurify>> PURIFY =
