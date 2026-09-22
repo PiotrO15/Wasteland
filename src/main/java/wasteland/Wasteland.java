@@ -22,6 +22,8 @@ import net.minecraftforge.registries.RegistryObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import wasteland.client.ClientSetup;
+import wasteland.common.block.Aquarium;
+import wasteland.common.block.HydroponicGarden;
 import wasteland.common.block.ModBlocks;
 import wasteland.common.block.ecostabilizer.EcostabilizerScreen;
 import wasteland.common.chunk.EcostabilizerEvents;
@@ -67,6 +69,8 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(BiodiversityScanner.class);
         MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
         MinecraftForge.EVENT_BUS.register(EcostabilizerEvents.class);
+        MinecraftForge.EVENT_BUS.register(HydroponicGarden.class);
+        MinecraftForge.EVENT_BUS.register(Aquarium.class);
         MinecraftForge.EVENT_BUS.register(EcostabilizerScreen.class);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
