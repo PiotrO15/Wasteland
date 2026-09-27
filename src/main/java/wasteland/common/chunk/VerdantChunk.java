@@ -13,6 +13,7 @@ import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 import net.minecraftforge.common.util.INBTSerializable;
 import wasteland.Wasteland;
 import wasteland.common.registry.BlockGroupRegistry;
+import wasteland.config.CommonConfig;
 
 import java.util.*;
 
@@ -24,7 +25,6 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
 
     private final Map<Integer, Map<TagKey<Block>, Integer>> data = new HashMap<>();
 
-    public static final int CURRENT_SCAN_HASH_INDEX = 2;
     private int scannedHash = 0;
 
     public VerdantChunk(LevelChunk chunk) {
@@ -149,7 +149,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
     }
 
     public void scanChunk() {
-        if (scannedHash == CURRENT_SCAN_HASH_INDEX) return;
+        if (scannedHash == CommonConfig.INSTANCE.chunkVersion.get()) return;
         if (chunk.getLevel().isClientSide()) return;
 
         data.clear();
@@ -176,7 +176,7 @@ public class VerdantChunk implements INBTSerializable<CompoundTag> {
             }
         }
 
-        scannedHash = CURRENT_SCAN_HASH_INDEX;
+        scannedHash = CommonConfig.INSTANCE.chunkVersion.get();
         chunk.setUnsaved(true);
     }
 }

@@ -15,6 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 import org.joml.Quaternionf;
 
@@ -29,6 +31,7 @@ public class Aquarium {
             2, List.of(new BlockPos(2, 1, 3), new BlockPos(3, 1, 2), new BlockPos(1, 1, 1))
     );
 
+    @OnlyIn(Dist.CLIENT)
     public static void render(BlockEntity blockEntity, PoseStack stack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         var optional = blockEntity.getCapability(MBDCapabilities.CAPABILITY_MACHINE).resolve();
         if (optional.isEmpty() || !(optional.get() instanceof MBDMachine machine)) return;

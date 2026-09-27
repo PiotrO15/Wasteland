@@ -13,7 +13,9 @@ import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -37,6 +39,7 @@ import wasteland.common.item.Compost;
 import wasteland.common.item.ModItems;
 import wasteland.common.registry.ModRegistries;
 import wasteland.compat.agricraft.AgriCraftPlugin;
+import wasteland.config.CommonConfig;
 import wasteland.tree.BeehiveProbabilityModifier;
 
 @Mod(Wasteland.MOD_ID)
@@ -49,6 +52,8 @@ public class Wasteland {
 
     public Wasteland() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);

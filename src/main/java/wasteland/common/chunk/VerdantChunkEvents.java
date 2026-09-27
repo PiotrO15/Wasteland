@@ -5,6 +5,7 @@ import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import wasteland.Wasteland;
+import wasteland.config.CommonConfig;
 
 @Mod.EventBusSubscriber(modid = Wasteland.MOD_ID)
 public class VerdantChunkEvents {
@@ -14,7 +15,7 @@ public class VerdantChunkEvents {
         if (!(event.getChunk() instanceof LevelChunk levelChunk)) return;
 
         levelChunk.getCapability(Wasteland.VERDANT_CHUNK_CAPABILITY).ifPresent(cap -> {
-            if (cap.scannedHash() != VerdantChunk.CURRENT_SCAN_HASH_INDEX) {
+            if (cap.scannedHash() != CommonConfig.INSTANCE.chunkVersion.get()) {
                 cap.scanChunk();
             }
         });

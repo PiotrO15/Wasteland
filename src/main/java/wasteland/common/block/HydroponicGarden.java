@@ -23,7 +23,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.common.chunk.EcostabilizerEvents;
 
@@ -51,6 +52,7 @@ public class HydroponicGarden {
         EcostabilizerEvents.setCustomData(event.getMachine(), compoundTag -> compoundTag.putDouble("progress", 0.0));
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void render(BlockEntity blockEntity, PoseStack stack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         var optional = blockEntity.getCapability(MBDCapabilities.CAPABILITY_MACHINE).resolve();
         if (optional.isEmpty() || !(optional.get() instanceof MBDMachine machine)) return;
