@@ -21,8 +21,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import wasteland.Wasteland;
-import wasteland.common.chunk.ChunkEventSystem;
 import wasteland.common.item.ModItems;
+import wasteland.config.CommonConfig;
 
 import java.util.*;
 
@@ -36,10 +36,10 @@ public class BiodiversityScannerRenderer {
 
     private static final RenderType AREA_TYPE = createRenderType();
 
-    private static int lastCoverageHash;
+    private static int lastVersion;
     private static List<WallEntry> cachedWalls;
 
-    public enum ZoneType { ECOSTABILIZER, EXTENDER }
+    public enum ZoneType { ECOSTABILIZER, SPREADER }
 
     private static final int[][] DIRS = {{0, -4}, {0, 4}, {4, 0}, {-4, 0}};
 
@@ -69,18 +69,15 @@ public class BiodiversityScannerRenderer {
         return RenderType.create("ecostabilizer_area", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, true, state);
     }
 
-    private static List<BlockPos> affectedQuartCells(Level level, BlockPos center, int radius) {
+    private static List<BlockPos> affectedQuartCells(BlockPos center, int radius) {
         List<BlockPos> cells = new ArrayList<>();
-        int quartRadius = asQuart(radius); // reuse your existing helper
+        int quartRadius = asQuart(radius);
         BlockPos origin = quantize(center);
         int originQx = origin.getX() / 4, originQz = origin.getZ() / 4;
 
         for (int dx = -quartRadius; dx <= quartRadius; dx++) {
             for (int dz = -quartRadius; dz <= quartRadius; dz++) {
                 if (dx * dx + dz * dz <= (quartRadius + 0.5) * (quartRadius + 0.5)) {
-                    int x = (originQx + dx) * 4;
-                    int z = (originQz + dz) * 4;
-                    if (!level.isLoaded(new BlockPos(x, 0, z))) continue;
                     cells.add(new BlockPos((originQx + dx) * 4, center.getY() - 1, (originQz + dz) * 4));
                 }
             }
@@ -88,11 +85,11 @@ public class BiodiversityScannerRenderer {
         return cells;
     }
 
-    private static Map<BlockPos, Set<ZoneType>> buildCoverageMap(Level level) {
+    private static Map<BlockPos, Set<ZoneType>> buildCoverageMap() {
         Map<BlockPos, Set<ZoneType>> coverage = new HashMap<>();
 
-        for (var entry : ChunkEventSystem.getInstance().getMachineRadiusMap().entrySet()) {
-            for (BlockPos cell : affectedQuartCells(level, entry.getKey(), entry.getValue())) {
+        for (var entry : EcostabilizerRadiusMapCache.ecostabilizers().entrySet()) {
+            for (BlockPos cell : affectedQuartCells(entry.getKey(), entry.getValue())) {
                 coverage.computeIfAbsent(cell, k -> EnumSet.noneOf(ZoneType.class)).add(ZoneType.ECOSTABILIZER);
             }
         }
@@ -105,30 +102,28 @@ public class BiodiversityScannerRenderer {
     }
 
     private static int colorFor(Set<ZoneType> types) {
-        if (types.size() > 1) return 0x80FFFF00; // overlap = distinct color (e.g. yellow), not a blend
+        if (types.size() > 1) return 0x80FFFF00;
         return switch (types.iterator().next()) {
-            case ECOSTABILIZER -> 0x4000AAFF; // translucent blue
-            case EXTENDER      -> 0x40FF6020; // translucent orange
+            case ECOSTABILIZER -> 0x4000AAFF;
+            case SPREADER -> 0x40FF6020;
         };
     }
 
     private static void rebuildIfNeeded() {
-        Level level = Minecraft.getInstance().level;
-        if (level == null) return;
+        int version = EcostabilizerRadiusMapCache.version();
+        if (version == lastVersion && cachedWalls != null) return;
 
-        Map<BlockPos, Set<ZoneType>> coverage = buildCoverageMap(level);
-        int hash = coverage.hashCode();
-        if (hash == lastCoverageHash) return;
-
-        cachedWalls = buildWalls(coverage, level);
-        lastCoverageHash = hash;
+        cachedWalls = buildWalls();
+        lastVersion = version;
     }
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
         Player player = Minecraft.getInstance().player;
-        if (player == null || (!player.getMainHandItem().is(ModItems.BIODIVERSITY_SCANNER.get()) && !player.getOffhandItem().is(ModItems.BIODIVERSITY_SCANNER.get()))) return;
+        Level level = Minecraft.getInstance().level;
+        if (level == null || player == null || (!player.getMainHandItem().is(ModItems.BIODIVERSITY_SCANNER.get()) && !player.getOffhandItem().is(ModItems.BIODIVERSITY_SCANNER.get()))) return;
+        if (!level.dimension().location().equals(CommonConfig.getOverworld())) return;
 
         rebuildIfNeeded();
         if (cachedWalls == null) return;
@@ -138,11 +133,12 @@ public class BiodiversityScannerRenderer {
         poseStack.pushPose();
         poseStack.translate(-cam.x, -cam.y, -cam.z);
 
-
         VertexConsumer buffer = Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(AREA_TYPE);
         Matrix4f mat = poseStack.last().pose();
 
         for (WallEntry w : cachedWalls) {
+            if (!level.isLoaded(w.edgeStart)) continue;
+
             int c = w.color();
             float a = ((c >> 24) & 0xFF) / 255f, r = ((c >> 16) & 0xFF) / 255f,
                     g = ((c >> 8) & 0xFF) / 255f,  b = (c & 0xFF) / 255f;
@@ -165,7 +161,8 @@ public class BiodiversityScannerRenderer {
 
     record WallEntry(BlockPos edgeStart, BlockPos edgeEnd, int color) {}
 
-    private static List<WallEntry> buildWalls(Map<BlockPos, Set<ZoneType>> coverage, Level level) {
+    private static List<WallEntry> buildWalls() {
+        Map<BlockPos, Set<ZoneType>> coverage = buildCoverageMap();
         List<WallEntry> walls = new ArrayList<>();
 
         for (var entry : coverage.entrySet()) {

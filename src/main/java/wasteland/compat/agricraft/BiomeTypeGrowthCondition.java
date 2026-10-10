@@ -8,6 +8,7 @@ import com.agricraft.agricraft.api.requirement.AgriGrowthResponse;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import wasteland.config.CommonConfig;
 
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ public class BiomeTypeGrowthCondition extends AgriGrowthConditionRegistry.BaseGr
         if (ecosystemModifier.isPresent()) {
             String namespace = level.getBiome(pos).unwrapKey().orElseThrow().location().getNamespace();
 
-            return ((namespace.equals("recovering") || namespace.equals("minecraft")) && level.dimension().location().equals(new ResourceLocation("minecraft:overworld"))) ? AgriGrowthResponse.FERTILE : AgriGrowthResponse.INFERTILE;
+            return ((namespace.equals("recovering") || namespace.equals("minecraft")) && level.dimension().location().equals(CommonConfig.getOverworld())) ? AgriGrowthResponse.FERTILE : AgriGrowthResponse.INFERTILE;
         } else {
             return AgriGrowthResponse.FERTILE;
         }

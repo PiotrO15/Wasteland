@@ -24,13 +24,19 @@ import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.util.TriPredicate;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import wasteland.Wasteland;
+import wasteland.client.EcostabilizerRadiusMapCache;
 import wasteland.common.block.ecostabilizer.AnimalSpawner;
 import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
+import wasteland.common.packet.SyncRadiusMapPacket;
 import wasteland.common.registry.ModRegistries;
 
 import java.util.*;
@@ -406,5 +412,16 @@ public class EcostabilizerEvents {
 
         if (advancement == null) return;
         player.getAdvancements().award(advancement, "impossible");
+    }
+
+    @SubscribeEvent
+    public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) SyncRadiusMapPacket.syncTo(serverPlayer);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    public static void onLeave(ClientPlayerNetworkEvent.LoggingOut event) {
+        EcostabilizerRadiusMapCache.clear();
     }
 }

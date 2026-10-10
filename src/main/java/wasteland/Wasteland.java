@@ -19,6 +19,8 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.simple.SimpleChannel;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +39,7 @@ import wasteland.common.entity.drone.ProgWidgetPurify;
 import wasteland.common.item.BiodiversityScanner;
 import wasteland.common.item.Compost;
 import wasteland.common.item.ModItems;
+import wasteland.common.packet.SyncRadiusMapPacket;
 import wasteland.common.registry.ModRegistries;
 import wasteland.compat.agricraft.AgriCraftPlugin;
 import wasteland.config.CommonConfig;
@@ -46,6 +49,14 @@ import wasteland.tree.BeehiveProbabilityModifier;
 public class Wasteland {
     public static final String MOD_ID = "wasteland";
     public static final Logger LOGGER = LogManager.getLogger("Wasteland");
+
+    private static final String PROTOCOL_VERSION = "1";
+    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation(MOD_ID, "main"),
+            () -> PROTOCOL_VERSION,
+            PROTOCOL_VERSION::equals,
+            PROTOCOL_VERSION::equals
+    );
 
     private static final DeferredRegister<ProgWidgetType<?>> PROG_WIDGETS_DEFERRED =
             DeferredRegister.create(PneumaticRegistry.RL("prog_widgets"), "wasteland");
@@ -77,6 +88,8 @@ public class Wasteland {
         MinecraftForge.EVENT_BUS.register(HydroponicGarden.class);
         MinecraftForge.EVENT_BUS.register(Aquarium.class);
         MinecraftForge.EVENT_BUS.register(EcostabilizerScreen.class);
+
+        CHANNEL.registerMessage(0, SyncRadiusMapPacket.class, SyncRadiusMapPacket::encode, SyncRadiusMapPacket::decode, SyncRadiusMapPacket::handle);
 
         PROG_WIDGETS_DEFERRED.register(FMLJavaModLoadingContext.get().getModEventBus());
     }

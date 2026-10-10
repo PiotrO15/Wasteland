@@ -20,6 +20,7 @@ import wasteland.common.block.ecostabilizer.Ecosystem;
 import wasteland.common.block.ecostabilizer.EcosystemDefinition;
 import wasteland.common.block.ecostabilizer.task.BiomeEcosystemTask;
 import wasteland.common.block.ecostabilizer.task.EcosystemTask;
+import wasteland.common.packet.SyncRadiusMapPacket;
 import wasteland.common.registry.AnimalGroupRegistry;
 import wasteland.common.registry.BlockGroupRegistry;
 
@@ -149,6 +150,8 @@ public class ChunkEventSystem {
     public void registerListener(MBDMachine stabilizer, int radius) {
         machineData.put(stabilizer.getPos(), stabilizer);
         machineRadius.put(stabilizer.getPos(), radius);
+
+        SyncRadiusMapPacket.syncToAll();
     }
 
     public void unregisterListener(BlockPos entity) {
@@ -156,6 +159,8 @@ public class ChunkEventSystem {
         machineData.remove(entity);
         biomeData.remove(entity);
         machineRadius.remove(entity);
+
+        SyncRadiusMapPacket.syncToAll();
     }
 
     public void notifyIncrease(BlockPos pos, TagKey<Block> blockGroup, int amount, Level level) {

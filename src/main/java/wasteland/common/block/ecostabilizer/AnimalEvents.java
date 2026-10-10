@@ -1,7 +1,6 @@
 package wasteland.common.block.ecostabilizer;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -9,6 +8,7 @@ import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import wasteland.common.chunk.ChunkEventSystem;
+import wasteland.config.CommonConfig;
 
 import java.util.*;
 
@@ -29,7 +29,7 @@ public class AnimalEvents {
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
-        if (!event.getLevel().dimension().location().equals(new ResourceLocation("minecraft", "overworld"))) return;
+        if (!event.getLevel().dimension().location().equals(CommonConfig.getOverworld())) return;
         if (event.loadedFromDisk()) return;
         if (event.getEntity() instanceof Mob mob) AnimalEvents.getInstance().evaluate(mob);
     }
@@ -37,7 +37,7 @@ public class AnimalEvents {
     @SubscribeEvent
     public static void onLeave(EntityLeaveLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
-        if (!event.getLevel().dimension().location().equals(new ResourceLocation("minecraft", "overworld"))) return;
+        if (!event.getLevel().dimension().location().equals(CommonConfig.getOverworld())) return;
         if (!(event.getEntity() instanceof Mob mob)) return;
 
         Entity.RemovalReason reason = mob.getRemovalReason();
