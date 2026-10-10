@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,6 +29,7 @@ import java.util.*;
 import static wasteland.common.chunk.ChunkEventSystem.asQuart;
 import static wasteland.common.chunk.ChunkEventSystem.quantize;
 
+@OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = Wasteland.MOD_ID, value = Dist.CLIENT)
 public class BiodiversityScannerRenderer {
     // TODO: Refactor and simplify code
@@ -129,6 +131,7 @@ public class BiodiversityScannerRenderer {
         if (player == null || (!player.getMainHandItem().is(ModItems.BIODIVERSITY_SCANNER.get()) && !player.getOffhandItem().is(ModItems.BIODIVERSITY_SCANNER.get()))) return;
 
         rebuildIfNeeded();
+        if (cachedWalls == null) return;
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 cam = event.getCamera().getPosition();

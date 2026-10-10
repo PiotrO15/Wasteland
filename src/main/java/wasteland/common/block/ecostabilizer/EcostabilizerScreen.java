@@ -71,6 +71,7 @@ public class EcostabilizerScreen {
 
         RegistryAccess registryAccess;
         if (event.getPlayer().level().isClientSide) {
+            if (Minecraft.getInstance().level == null) return;
             registryAccess = Minecraft.getInstance().level.registryAccess();
         } else {
             registryAccess = event.getPlayer().level().registryAccess();
@@ -175,6 +176,7 @@ public class EcostabilizerScreen {
         taskGroup.addWidget(progressText);
 
         ResourceLocation taskId = registryAccess.registryOrThrow(ModRegistries.ECOSYSTEM_TASK).getKey(task);
+        if (taskId == null) return taskGroup;
 
         if (clientSide) {
             ButtonWidget emiArea = new ButtonWidget(0, 0, 152, 24, IGuiTexture.EMPTY, clickData -> {

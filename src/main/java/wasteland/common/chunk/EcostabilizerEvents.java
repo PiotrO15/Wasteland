@@ -324,7 +324,7 @@ public class EcostabilizerEvents {
             }
             if (!completed || i == 4) {
                 Wasteland.LOGGER.warn("Finished recalculating stage {} at {}, {}", i, pos, completed);
-                setStage(machine, (completed && i == 4) ? 5 : i);
+                setStage(machine, completed ? 5 : i);
                 ChunkEventSystem.getInstance().updateCachedAnimalSpawners(pos, i, ecosystem.get(), finishedTasks);
                 break;
             }
@@ -344,7 +344,6 @@ public class EcostabilizerEvents {
     public static void spawnFromCachedList(ServerLevel level, BlockPos machinePos) {
         List<AnimalSpawner> animalSpawners = ChunkEventSystem.getInstance().getCachedAnimalSpawners(machinePos);
         if (animalSpawners.isEmpty()) {
-            Wasteland.LOGGER.warn("No spawnable animals, {}", machinePos);
             return;
         }
 
@@ -373,8 +372,10 @@ public class EcostabilizerEvents {
         }
 
         Entity e = type.spawn(level, spawner.nbt(), null, trySpawnPos, MobSpawnType.NATURAL, false, false);
-        e.load(e.serializeNBT().merge(spawner.nbt()));
-        Wasteland.LOGGER.warn("Spawning animal {} at {}", spawner, trySpawnPos);
+        if (e != null) {
+            e.load(e.serializeNBT().merge(spawner.nbt()));
+            Wasteland.LOGGER.warn("Spawning animal {} at {}", spawner, trySpawnPos);
+        }
     }
 
     public static BlockPos atSurface(ServerLevel level, BlockPos pos) {
@@ -398,6 +399,8 @@ public class EcostabilizerEvents {
 
     private static void grantAdvancement(ServerPlayer player, String advancementName) {
         if (advancementName == null) return;
+        if (player.getServer() == null) return;
+
         Advancement advancement = player.getServer().getAdvancements()
                 .getAdvancement(new ResourceLocation("wasteland", advancementName));
 
