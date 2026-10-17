@@ -1,4 +1,4 @@
-package wasteland;
+package wasteland.client;
 
 import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.world.level.GrassColor;
@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import wasteland.Wasteland;
 import wasteland.common.block.ModBlocks;
 
 @EventBusSubscriber(modid = Wasteland.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
