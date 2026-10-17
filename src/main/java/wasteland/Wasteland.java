@@ -36,8 +36,6 @@ import wasteland.common.chunk.VerdantChunkProvider;
 import wasteland.common.block.ecostabilizer.task.EcosystemTaskRegistry;
 import wasteland.common.entity.ModEntityTypes;
 import wasteland.common.entity.drone.ProgWidgetPurify;
-import wasteland.common.item.BiodiversityScanner;
-import wasteland.common.item.Compost;
 import wasteland.common.item.ModItems;
 import wasteland.common.packet.SyncRadiusMapPacket;
 import wasteland.common.registry.ModRegistries;
@@ -81,8 +79,6 @@ public class Wasteland {
         }
 
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(Compost.class);
-        MinecraftForge.EVENT_BUS.register(BiodiversityScanner.class);
         MinecraftForge.EVENT_BUS.register(BeehiveProbabilityModifier.class);
         MinecraftForge.EVENT_BUS.register(EcostabilizerEvents.class);
         MinecraftForge.EVENT_BUS.register(HydroponicGarden.class);

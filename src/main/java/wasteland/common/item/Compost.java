@@ -6,67 +6,71 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BoneMealItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 import wasteland.common.block.DepletedSoil;
+import wasteland.common.block.ecostabilizer.Ecosystem;
 
 import java.util.Optional;
 
-public class Compost {
-    @SubscribeEvent
-    public static void onUse(PlayerInteractEvent.RightClickBlock event) {
-        ItemStack itemStack = event.getItemStack();
-        Level level = event.getLevel();
+public class Compost extends BoneMealItem {
+    public Compost(Properties properties) {
+        super(properties);
+    }
 
-        if (itemStack.getItem() != ModItems.COMPOST.get()) {
-            return;
-        }
+    @Override
+    public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
+        ItemStack itemStack = context.getItemInHand();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        boolean creative = context.getPlayer() != null && context.getPlayer().isCreative();
 
-        if (level.getBlockState(event.getPos()).getBlock() instanceof DepletedSoil) {
-            if (!level.isClientSide()) {
-                createClover((ServerLevel) level, level.getRandom(), event.getPos());
-                if (!event.getEntity().isCreative()) {
-                    itemStack.shrink(1);
-                }
-            } else {
-                BoneMealItem.addGrowthParticles(level, event.getPos().above(), 15);
-            }
-            return;
-        }
-
-        if (level.getBlockState(event.getPos()).getBlock() != Blocks.GRASS) {
-            return;
-        }
-
-        if (level.isClientSide()) {
-            BoneMealItem.addGrowthParticles(level, event.getPos(), 15);
-        } else {
-            Optional<Block> plant = ForgeRegistries.BLOCKS.tags().getTag(BlockTags.create(
-                    new ResourceLocation("wasteland", "compost_growable"))).getRandomElement(level.random);
-
-            if (plant.isPresent()) {
-                BlockState plantState = plant.get().getStateForPlacement(new BlockPlaceContext(level, event.getEntity(), event.getHand(), itemStack, event.getHitVec()));
-
-                if (plantState != null) {
-                    level.setBlockAndUpdate(event.getPos(), plantState);
-
-                    if (!event.getEntity().isCreative()) {
+        if (level.getBlockState(pos).getBlock() instanceof DepletedSoil) {
+            if (level.getBlockState(pos.above()).isAir()) {
+                if (level.isClientSide()) {
+                    BoneMealItem.addGrowthParticles(level, pos.above(), 15);
+                } else {
+                    createClover((ServerLevel) level, level.getRandom(), pos);
+                    if (!creative) {
                         itemStack.shrink(1);
                     }
                 }
+                return InteractionResult.sidedSuccess(level.isClientSide());
             }
+        } else if (level.getBlockState(pos).getBlock() == Blocks.GRASS) {
+            if (level.isClientSide()) {
+                BoneMealItem.addGrowthParticles(level, pos, 15);
+            } else {
+                Ecosystem ecosystem = Ecosystem.fromAnchorBiome(level.getBiome(pos));
+                Block sapling;
+
+                if (ecosystem != null) {
+                    sapling = ForgeRegistries.BLOCKS.tags().getTag(ecosystem.getSaplingTag()).getRandomElement(level.random).orElse(Blocks.OAK_SAPLING);
+                } else {
+                    sapling = Blocks.OAK_SAPLING;
+                }
+
+                BlockState plantState = sapling.defaultBlockState();
+
+                level.setBlockAndUpdate(pos, plantState);
+
+                if (!creative) {
+                    itemStack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide());
         }
+        return super.useOn(context);
     }
 
     private static void createClover(ServerLevel level, RandomSource random, BlockPos pos) {
