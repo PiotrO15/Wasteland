@@ -6,6 +6,7 @@
     "AgriCraftComplexitiesPatch",
     "AgriCraftFarmerBeeCompat",
     "AgriCraftFertilityPatch",
+    "AgriCraftGrowthConditionMixin",
     "AgriHornHarvestablePatch",
     "AgriPlantAllowsClippingPatch",
     "BlendBiomeResolverMixin",
