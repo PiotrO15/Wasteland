@@ -128,7 +128,7 @@ public class HydroponicGarden {
                 plant.getHarvestProducts(drops::add, new AgriGrowthStage(7, 8), genome, event.getMachine().getLevel().random);
             }
 
-            MBDRecipeBuilder builder = event.getRecipe().toBuilder();
+            MBDRecipeBuilder builder = new MBDRecipeBuilder(event.getRecipe(), event.getMachine().getRecipeType());
 
             builder.output.clear();
             drops.forEach(builder::outputItems);
