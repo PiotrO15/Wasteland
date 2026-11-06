@@ -14,7 +14,7 @@ import net.minecraftforge.registries.RegistryObject;
 import wasteland.Wasteland;
 import wasteland.common.entity.drone.TerraformingDroneEntity;
 
-public class ModItems {
+public class ModItems  {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Wasteland.MOD_ID);
 
     public static final RegistryObject<Item> COMPOST = ITEMS.register("compost", () -> new Compost(new Item.Properties()));
